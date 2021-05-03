@@ -124,3 +124,9 @@ def upload_error(error: Error, credentials: HTTPBasicCredentials = Depends(secur
             wd.write(error.json())
         return error.dict()
     return safe(credentials = credentials, function = callback, args = [error])
+
+@app.get("/heartbeat")
+def heartbeat(credentials: HTTPBasicCredentials = Depends(security)):
+    def callback():
+        return {"success": True}
+    return safe(credentials = credentials, function = callback)
