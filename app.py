@@ -1,29 +1,172 @@
-import os
-
 import dash
 import dash_core_components as dcc
+import dash_bootstrap_components as dbc
 import dash_html_components as html
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
+import dash_auth
+import plotly.express as px
+import pandas as pd
+import os
+import json
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+#import scripts
+import api
+import tools
+import measurements
+import details
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+#load vals
+title = "Projektarbeit SoSe 2021"
+external_stylesheets = [dbc.themes.BOOTSTRAP]
+meta_tags = [{"name": "viewport", "content": "width=device-width, initial-scale=1"}]
 
+#init app
+app = dash.Dash( 
+    external_stylesheets=external_stylesheets,
+    meta_tags=meta_tags,
+    suppress_callback_exceptions=True
+)
+app.title = title
 server = app.server
 
-app.layout = html.Div([
-    html.H2('Hello World'),
-    dcc.Dropdown(
-        id='dropdown',
-        options=[{'label': i, 'value': i} for i in ['LA', 'NYC', 'MTL']],
-        value='LA'
-    ),
-    html.Div(id='display-value')
-])
+#init http basic auth
+user_credentials = tools.get_user_credentials()
+auth = dash_auth.BasicAuth(app, user_credentials)
 
-@app.callback(dash.dependencies.Output('display-value', 'children'),
-              [dash.dependencies.Input('dropdown', 'value')])
-def display_value(value):
-    return 'You have selected "{}"'.format(value)
+#basic layout of dash app with navbar
+app.layout = html.Div(
+    children = [
+        #Navbar
+        dbc.NavbarSimple(
+            children = [
+                #Measurements button
+                dbc.Button(
+                    "Measurements",
+                    id = "measurements-navbutton",
+                    color = "primary"
+                ),
+                #Details button
+                dbc.Button(
+                    "Details",
+                    id = "details-navbutton",
+                    color = "primary"
+                ),
+                #Control button
+                dbc.Button(
+                    "Control",
+                    id = "control-navbutton",
+                    color = "primary"
+                )
+            ],
+            brand = title,
+            color = "primary",
+            dark = True,
+            expand = "lg"
+        ),
+        
+        #content Div
+        html.Div(
+            tools.content_div(),
+            id = "update-content-div"
+        ),
+        
+        #url location
+        dcc.Location(
+            id = "url",
+            refresh = False
+        )
+    ]
+)
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+#Navbar callback
+@app.callback(
+    [Output("url", "pathname"),
+     Output("measurements-navbutton", "n_clicks"),
+     Output("details-navbutton", "n_clicks"),
+     Output("control-navbutton", "n_clicks"),
+     Output("update-content-div", "children")],
+    [Input("url", "pathname"),
+     Input("measurements-navbutton", "n_clicks"),
+     Input("details-navbutton", "n_clicks"),
+     Input("control-navbutton", "n_clicks")]
+)
+def navbar_callback(url, n_measurements, n_details, n_control):
+    #creating return list for all Output values
+    def return_list(url = "/"):
+        return [url, 0, 0, 0, tools.content_div()]
+    
+    #for getting details id
+    def details_url():
+        user = tools.get_user()
+        id = tools.get_user_data(user)["details_id"]
+        
+        #proof if user ever visited details
+        if not isinstance(id, int):
+            id = max([m.split("_")[1] for m in api.get_measurements()])
+        
+        #update user details id
+        tools.update_user_details(user, id)
+        return f"/details/{id}"
+    
+    #get user data
+    user = tools.get_user()
+    user_data = tools.get_user_data(user)
+    
+    #set url to last kown if not defined
+    if url == "/":
+        return return_list(url = user_data["url"])
+    if url == "/details":
+        return return_list(url = details_url())
+    
+    #set url if navbutton is pressed
+    if n_measurements:
+        url = "/measurements"
+    elif n_details:
+        url = details_url()
+    elif n_control:
+        url = "/control"
+    
+    #return url
+    return return_list(url = url)
+    
+    raise PreventUpdate
+
+#callback for site content
+@app.callback(
+    [Output("content", "children"),
+     Output("measurements-navbutton", "active"),
+     Output("details-navbutton", "active"),
+     Output("control-navbutton", "active")],
+    [Input("url", "pathname")]
+)
+def update_content(url):
+    #creating return list for all Output values
+    def return_list(
+        content = tools.not_found_page(),
+        measurements_nav = False,
+        details_nav = False,
+        control_nav = False
+    ):
+        return [content, measurements_nav, details_nav, control_nav]
+    
+    #update url in user data
+    tools.update_user_url(tools.get_user(), url)
+    
+    #return measurements content
+    if url == "/measurements":
+        return return_list(content = measurements.content(), measurements_nav = True)
+    
+    #return details content
+    elif url.startswith("/details"):
+        id = url.split("/")[2]
+        tools.update_user_details(tools.get_user(), id)
+        return return_list(content = details.content(id), details_nav = True)
+    
+    #return control content
+    elif url == "/control":
+        return return_list(content = "control content", control_nav = True)
+    
+    #else page was not found
+    else:
+       return return_list()
