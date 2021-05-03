@@ -52,7 +52,7 @@ def safe(credentials, function, args = []):
 def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(commands):
         callbacks = dict()
-        with open("./API/control.json", "r") as rd:
+        with open(control_file, "r") as rd:
             callbacks["control"] = json.loads(rd.read())
         for i, command in enumerate(commands):
             try:
@@ -72,7 +72,7 @@ def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depe
 @app.get("/control")
 def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        with open("./API/control.json", "r") as rd:
+        with open(control_file, "r") as rd:
             return json.loads(rd.read())
     return safe(credentials = credentials, function = callback)
 
