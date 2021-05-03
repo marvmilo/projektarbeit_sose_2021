@@ -5,7 +5,7 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 
 #get sql script
-import sql
+import api
 
 #values
 udf = "./GUI/user_data.json"
@@ -63,6 +63,15 @@ def not_found_page():
             html.H3("not found!")
         ],
         style = flex_style
+    )
+
+#creates API not reachable page
+def error_page(error_msg):
+    return html.Div(
+        children = [
+            html.Div(html.H1("ERROR"), style = flex_style),
+            html.Div(html.H3(error_msg), style = flex_style)
+        ]
     )
 
 #creates page title

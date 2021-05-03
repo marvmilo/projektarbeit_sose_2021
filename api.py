@@ -2,23 +2,32 @@ import json
 import requests
 
 #api values
-api_url = "https://api-projektarbeit-sose-2021.herokuapp.com/"
+api_url = "https://api-projektarbeit-sose-2021.herokuapp.com"
 headers = {
     'accept': 'application/json',
     'Authorization': 'Basic dXNlcjpwcm9qZWt0MTIz',
     'Content-Type': 'application/json',
 }
 
-#fuction for executing any SQL command
-def execute_sql(*commands):
-    data = [*commands]
+#communciationg with api
+def communicate(method, sub, data = None):
     return json.loads(
-        requests.post(
-            f"{api_url}/sqlite3",
+        method(
+            f"{api_url}{sub}",
             headers = headers,
             data = data
         ).text
     )
+
+#fuction for executing any SQL command
+def execute_sql(*commands):
+    data = json.dumps([*commands], indent = 4)
+    resp = communicate(requests.post, "/sqlite3", data)
+    if len([*commands]) == 1:
+        if resp["success"]:
+            if resp["details"]["command_0"]["success"]:
+                return resp["details"]["command_0"]["details"]
+    return resp
 
 #for getting content of table
 def get_table(table_name):
@@ -47,3 +56,12 @@ def get_measurement(id):
 def get_measurements():
     callback = [m[0] for m in execute_sql("SELECT name FROM sqlite_master WHERE type='table'") if m[0].startswith("measurement_")]
     return callback
+
+#for checking if API is reachable
+def heartbeat():
+    try:
+        resp = communicate(requests.get, "/heartbeat")
+        return True
+    except:
+        return False
+    

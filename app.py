@@ -96,6 +96,9 @@ def navbar_callback(url, n_measurements, n_details, n_control):
     def return_list(url = "/"):
         return [url, 0, 0, 0, tools.content_div()]
     
+    if not api.heartbeat():
+        return return_list(url = "/API_error")
+    
     #for getting details id
     def details_url():
         user = tools.get_user()
@@ -150,6 +153,10 @@ def update_content(url):
     ):
         return [content, measurements_nav, details_nav, control_nav]
     
+    #return API is not reachable
+    if url == "/API_error":
+        return return_list(content = tools.error_page("API not reachable!"))
+    
     #update url in user data
     tools.update_user_url(tools.get_user(), url)
     
@@ -170,3 +177,6 @@ def update_content(url):
     #else page was not found
     else:
        return return_list()
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
