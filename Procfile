@@ -1,1 +1,1 @@
-web: gunicorn app:server --preload
+web: NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program gunicorn app:server --preload
