@@ -3,6 +3,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 import traceback
 import json
+import sqlite3
 import base64
 import os
 
@@ -10,8 +11,10 @@ import os
 control_file = "./control.json"
 error_file = "./error.json"
 
-#sql functions
-import sql
+#sqlite database values
+db_name = "database.db"
+db_connection = sqlite3.connect(db_name, check_same_thread = False)
+db_cursor = db_connection.cursor()
 
 #init API app
 app = FastAPI(
@@ -24,6 +27,12 @@ security = HTTPBasic()
 class Error(BaseModel):
     type: str
     message: str
+    
+#fuction for executing any SQL command
+def execute_sql(command):
+    db_cursor.execute(command)
+    db_connection.commit()
+    return db_cursor.fetchall()
 
 #function for executing other function only if the right credentials are given by API user
 def safe(credentials, function, args = []):
@@ -57,7 +66,7 @@ def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depe
         for i, command in enumerate(commands):
             try:
                 success = True
-                details = sql.execute_command(command)
+                details = execute_sql(command)
             except:
                 success = False
                 details = traceback.format_exc()
@@ -81,11 +90,13 @@ def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
 def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(name):
         #create table name
-        indices = [int(m.split("_")[1]) for m in sql.get_measurements()]
+        readout = execute_sql("SELECT name FROM sqlite_master WHERE type='table'")
+        measurements = [m[0] for m in readout if m[0].startswith("measurement_")]
+        indices = [int(m.split("_")[1]) for m in measurements]
         table_name = f"measurement_{max(indices)+1}"
         #create table in database
         sql_command = "CREATE TABLE {} (val_id INTEGER UNIQUE, timestamp TEXT, accx REAL,accy REAL,accz REAL,stable INTEGER,bridge_circuit_voltage REAL,PRIMARY KEY(val_id));"
-        sql.execute_command(sql_command.format(table_name))
+        execute_sql(sql_command.format(table_name))
         #edit control.json
         control = json.loads(open(control_file, "r").read())
         control["measurement"] = True
