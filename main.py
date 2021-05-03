@@ -6,8 +6,6 @@ import json
 import base64
 import os
 
-#load settings
-settings = json.loads(open("./settings.json", "r").read())
 #files
 control_file = "./control.json"
 error_file = "./error.json"
@@ -30,7 +28,7 @@ class Error(BaseModel):
 #function for executing other function only if the right credentials are given by API user
 def safe(credentials, function, args = []):
     #check for credentials
-    if credentials.username == settings["creds"]["user"] and credentials.password == settings["creds"]["pw"]:
+    if credentials.username == "user" and credentials.password == "projekt123":
         #return cases
         try:
             return {
