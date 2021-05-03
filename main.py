@@ -11,7 +11,7 @@ import os
 control_file = "./control.json"
 error_file = "./error.json"
 
-#sqlite database values
+#sqlite database values 
 db_name = "database.db"
 db_connection = sqlite3.connect(db_name, check_same_thread = False)
 db_cursor = db_connection.cursor()
