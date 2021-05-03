@@ -6,9 +6,6 @@ import json
 import base64
 import os
 
-#change cwd
-os.chdir("/home/ec2-user/Projekt")
-
 #load settings
 settings = json.loads(open("./settings.json", "r").read())
 #files
