@@ -105,4 +105,4 @@ def load_datetime(timestamp):
 def pp_timestamp(timestamp):
     if timestamp == "-":
         return "-"
-    return load_datetime(timestamp).strftime("%a - %d.%b.%Y - %H:%M")
+    return load_datetime(timestamp).strftime("%a,  %d.%b.%Y, %H:%M")

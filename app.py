@@ -17,7 +17,8 @@ import measurements
 import details
 
 #load vals
-title = "Projektarbeit SoSe 2021"
+title = "Projektarbeit GUI"
+navbar_title = " ".join(title.upper().replace(" ", "-"))
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 meta_tags = [{"name": "viewport", "content": "width=device-width, initial-scale=1"}]
 
@@ -39,27 +40,36 @@ app.layout = html.Div(
     children = [
         #Navbar
         dbc.NavbarSimple(
-            children = [
-                #Measurements button
-                dbc.Button(
-                    "Measurements",
-                    id = "measurements-navbutton",
-                    color = "primary"
-                ),
-                #Details button
-                dbc.Button(
-                    "Details",
-                    id = "details-navbutton",
-                    color = "primary"
-                ),
-                #Control button
-                dbc.Button(
-                    "Control",
-                    id = "control-navbutton",
-                    color = "primary"
-                )
-            ],
-            brand = title,
+            dbc.Row(
+                children = [
+                    #Measurements button
+                    dbc.Col(
+                        dbc.Button(
+                            "Measurements",
+                            id = "measurements-navbutton",
+                            color = "primary"
+                        )
+                    ),
+                    #Details button
+                    dbc.Col(
+                        dbc.Button(
+                            "Details",
+                            id = "details-navbutton",
+                            color = "primary"
+                        )
+                    ),
+                    #Control button
+                    dbc.Col(
+                        dbc.Button(
+                            "Control",
+                            id = "control-navbutton",
+                            color = "primary"
+                        )
+                    )
+                ],
+                className="ml-auto flex-nowrap mt-3 mt-md-0"
+            ),
+            brand = navbar_title,
             color = "primary",
             dark = True,
             expand = "lg"
@@ -179,4 +189,4 @@ def update_content(url):
        return return_list()
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host = "0.0.0.0")

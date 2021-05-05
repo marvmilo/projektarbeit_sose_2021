@@ -51,6 +51,15 @@ def content():
         except:
             duration = not_known
         
+        #get success badge
+        try:
+            if data[7]:
+                success = html.H4(dbc.Badge("True", color = "success",))
+            else:
+                raise Exception()
+        except:
+            success = html.H4(dbc.Badge("False", color = "danger"))
+        
         #add row
         table_rows.append(
             html.Tr(
@@ -59,6 +68,7 @@ def content():
                     cell(name),
                     cell(timestamp),
                     cell(duration),
+                    cell(success),
                     cell(
                         html.A(
                             dbc.Button(
@@ -89,6 +99,7 @@ def content():
                                     html.Th("NAME"),
                                     html.Th("TIMESTAMP"),
                                     html.Th("DURATION"),
+                                    html.Th("SUCCESS"),
                                     html.Th("")
                                 ],
                                 className="table-primary"
