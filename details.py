@@ -35,10 +35,41 @@ def info_card(header, value):
 def content(id):
     data = api.get_measurement(id)
     
+    #set success badge
+    if data["info"]["success"]:
+        success_badge = dbc.Badge(
+            str(True),
+            color = "success"
+        )
+    else:
+        success_badge = dbc.Badge(
+            str(False),
+            color = "danger"
+        )
+    
     #content div
     return html.Div(
         children = [
             #page title
+            dbc.Row(
+                children = [
+                    dbc.Col(
+                        "Success: ",
+                        width = "auto"
+                    ),
+                    dbc.Col(
+                        style = {"width": "10px"},
+                        width = "auto"
+                    ),
+                    dbc.Col(
+                        success_badge,
+                        width = "auto"
+                    )
+                ],
+                justify = "end",
+                no_gutters = True,
+                style = {"font-size": "25px"} 
+            ),
             tools.page_title(f"Details Measurement"),
             html.Div(
                 html.H1(

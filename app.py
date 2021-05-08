@@ -17,8 +17,8 @@ import measurements
 import details
 
 #load vals
-title = "Projektarbeit GUI"
-navbar_title = " ".join(title.upper().replace(" ", "-"))
+title = "Projektarbeit Sose 2021"
+#navbar_title = " ".join(title.upper().replace(" ", "-"))
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 meta_tags = [{"name": "viewport", "content": "width=device-width, initial-scale=1"}]
 
@@ -39,40 +39,74 @@ auth = dash_auth.BasicAuth(app, user_credentials)
 app.layout = html.Div(
     children = [
         #Navbar
-        dbc.NavbarSimple(
-            dbc.Row(
-                children = [
-                    #Measurements button
-                    dbc.Col(
-                        dbc.Button(
-                            "Measurements",
-                            id = "measurements-navbutton",
-                            color = "primary"
+        dbc.Navbar(
+            children = [
+                #navbar title
+                dbc.Row(
+                    children = [
+                        dbc.Col(
+                            " ".join(word.upper()),
+                            style = {
+                                "font-size": "20px",
+                                "color": "white",
+                                "white-space": "nowrap"
+                            },
+                            width = "auto"
                         )
+                        for word in title.split(" ")
+                    ],
+                    style = {
+                        "width": "300px",
+                        "max-width": "75%"
+                    }
+                ),
+        
+                #navbar toggler
+                dbc.NavbarToggler(id = "nav-toggler"),
+                
+                #navbar interactions
+                dbc.Collapse(
+                    dbc.Row(
+                        children = [
+                            #Measurements button
+                            dbc.Col(
+                                dbc.Button(
+                                    "Measurements",
+                                    id = "measurements-navbutton",
+                                    color = "primary"
+                                ),
+                                width = "auto"
+                            ),
+                            #Details button
+                            dbc.Col(
+                                dbc.Button(
+                                    "Details",
+                                    id = "details-navbutton",
+                                    color = "primary"
+                                ),
+                                width = "auto"
+                            ),
+                            #Control button
+                            dbc.Col(
+                                dbc.Button(
+                                    "Control",
+                                    id = "control-navbutton",
+                                    color = "primary"
+                                ),
+                                width = "auto"
+                            )
+                        ],
+                        justify = "end",
+                        no_gutters = True,
+                        style = {"width": "100%"}
                     ),
-                    #Details button
-                    dbc.Col(
-                        dbc.Button(
-                            "Details",
-                            id = "details-navbutton",
-                            color = "primary"
-                        )
-                    ),
-                    #Control button
-                    dbc.Col(
-                        dbc.Button(
-                            "Control",
-                            id = "control-navbutton",
-                            color = "primary"
-                        )
-                    )
-                ],
-                className="ml-auto flex-nowrap mt-3 mt-md-0"
-            ),
-            brand = navbar_title,
+                    navbar = True,
+                    id = "nav-collapse"
+                )
+            ],
             color = "primary",
             dark = True,
-            expand = "lg"
+            style = {"padding": "20px 40px"}
         ),
         
         #content Div
@@ -89,7 +123,18 @@ app.layout = html.Div(
     ]
 )
 
-#Navbar callback
+#navbar collapse callback
+@app.callback(
+    [Output("nav-collapse", "is_open")],
+    [Input("nav-toggler", "n_clicks")],
+    [State("nav-collapse", "is_open")]
+)
+def toggle_navbar_collapse(n_clicks, is_open):
+    if n_clicks:
+        return [not is_open]
+    return [is_open]
+
+#navbar interaction callback
 @app.callback(
     [Output("url", "pathname"),
      Output("measurements-navbutton", "n_clicks"),

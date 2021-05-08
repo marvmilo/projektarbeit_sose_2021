@@ -43,6 +43,10 @@ def get_measurement(id):
         info_data = ["-" for i in range(len(info_keys))]
     #create info dict
     info = {info_keys[i]: info_data[i] for i in range(len(info_keys))}
+    if not info["success"] == "-":
+        info["success"] = bool(info["success"])
+    else:
+        info["success"] = False
     
     #get data of measurement
     data = execute_sql(f"SELECT * FROM measurement_{id}")

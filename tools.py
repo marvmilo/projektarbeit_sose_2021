@@ -88,12 +88,17 @@ def page_title(title, color = "black"):
 def content_div():
     return html.Div(
         html.Div(
-            dbc.Spinner(),
-            style = flex_style
+            children = [
+                html.Div(style = {"height": "200px"}),
+                html.Div(
+                    dbc.Spinner(),
+                    style = flex_style
+                )
+            ]
         ),
         id = "content",
         style = {
-            "padding": "5%"
+            "padding": "2% 5%"
         }
     )
 
