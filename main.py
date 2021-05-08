@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.responses import FileResponse
+# from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import traceback
-import uvicorn
+# import uvicorn
 import json
 import sqlite3
 import base64
@@ -170,9 +170,9 @@ def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(secur
 @app.get("/database_file")
 def download_database_file(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        return FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
+        return None #FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
     return safe(credentials = credentials, function = callback)
 
-#for debugging
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# #for debugging
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
