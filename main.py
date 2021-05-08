@@ -3,6 +3,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import traceback
+import uvicorn
 import json
 import sqlite3
 import base64
@@ -171,3 +172,7 @@ def download_database_file(credentials: HTTPBasicCredentials = Depends(security)
     def callback():
         return FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
     return safe(credentials = credentials, function = callback)
+
+#for debugging
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
