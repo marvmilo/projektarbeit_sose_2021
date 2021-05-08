@@ -76,6 +76,7 @@ app.layout = html.Div(
                                 ),
                                 width = "auto"
                             ),
+                            tools.navbutton_spacing,
                             #Details button
                             dbc.Col(
                                 dbc.Button(
@@ -85,6 +86,7 @@ app.layout = html.Div(
                                 ),
                                 width = "auto"
                             ),
+                            tools.navbutton_spacing,
                             #Control button
                             dbc.Col(
                                 dbc.Button(

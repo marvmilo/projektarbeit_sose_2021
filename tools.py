@@ -15,7 +15,8 @@ flex_style = {
     "justify-content": "center",
     "align-items": "center"
 }
-accent_color = "#007BFF"
+accent_color = "#007BFF",
+navbutton_spacing = html.Div(style = {"width": "5px"})
 
 #for getting current user
 def get_user():
