@@ -7,7 +7,6 @@ import json
 import sqlite3
 import base64
 import os
-import uvicorn
 
 #files
 control_file = "./control.json"
@@ -170,9 +169,5 @@ def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(secur
 @app.get("/database_file")
 def download_database_file(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        return None #FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
+        return FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
     return safe(credentials = credentials, function = callback)
-
-#for debugging
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
