@@ -170,7 +170,7 @@ def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(secur
 @app.get("/database_file")
 def download_database_file(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        return FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
+        return None #FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
     return safe(credentials = credentials, function = callback)
 
 #for debugging
