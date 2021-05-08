@@ -1,15 +1,20 @@
 from fastapi import FastAPI, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import traceback
 import json
 import sqlite3
 import base64
 import os
+import uvicorn
 
 #files
 control_file = "./control.json"
 error_file = "./error.json"
+
+#global vals
+ESP_online = False
 
 #sqlite database values 
 db_name = "database.db"
@@ -33,6 +38,11 @@ def execute_sql(command):
     db_cursor.execute(command)
     db_connection.commit()
     return db_cursor.fetchall()
+
+#function for getting control file
+def get_control():
+    with open(control_file, "r") as rd:
+        return json.loads(rd.read())
 
 #function for executing other function only if the right credentials are given by API user
 def safe(credentials, function, args = []):
@@ -77,15 +87,23 @@ def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depe
         return callbacks
     return safe(credentials = credentials, function = callback, args = [commands])
 
-#GET for downloadin control json
+#GET for downloading control json
 @app.get("/control")
 def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        with open(control_file, "r") as rd:
-            return json.loads(rd.read())
+        return get_control()
     return safe(credentials = credentials, function = callback)
 
-#POST function for starting measurement with saved control.json
+#GET for downloading control json and updating heartbeat of esp
+@app.get("/control/esp")
+def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
+    global ESP_online
+    ESP_online = True
+    def callback():
+        return get_control()
+    return safe(credentials = credentials, function = callback)
+
+#POST function for starting measurement with saved control json
 @app.post("/measurement_start")
 def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(name):
@@ -116,8 +134,8 @@ def stop_measurement(credentials: HTTPBasicCredentials = Depends(security)):
         return control
     return safe(credentials = credentials, function = callback)
 
-#POST function for returing error form ESP
-@app.post("/error")
+#PUT function for returing error form ESP
+@app.put("/error")
 def upload_error(error: Error, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(error):
         with open(error_file, "w") as wd:
@@ -125,8 +143,36 @@ def upload_error(error: Error, credentials: HTTPBasicCredentials = Depends(secur
         return error.dict()
     return safe(credentials = credentials, function = callback, args = [error])
 
-@app.get("/heartbeat")
-def heartbeat(credentials: HTTPBasicCredentials = Depends(security)):
+#GET for checking heartbeat of API
+@app.get("/heartbeat/api")
+def heartbeat_api(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        return None
+        return {"heartbeat": False}
     return safe(credentials = credentials, function = callback)
+
+#GET for checking heartbeat of ESP
+@app.get("/heartbeat/esp")
+def heartbeat_esp(credentials: HTTPBasicCredentials = Depends(security)):
+    def callback():
+        return {"heartbeat": ESP_online}
+    return safe(credentials = credentials, function = callback)
+
+#PUT for setting heartbeat of ESP to False
+@app.put("/heartbeat/esp/false")
+def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(security)):
+    def callback():
+        global ESP_online
+        ESP_online = False
+        return {"heartbeat": ESP_online}
+    return safe(credentials = credentials, function = callback)
+
+#GET database for debugging
+@app.get("/database_file")
+def download_database_file(credentials: HTTPBasicCredentials = Depends(security)):
+    def callback():
+        return FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
+    return safe(credentials = credentials, function = callback)
+
+#for debugging
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
