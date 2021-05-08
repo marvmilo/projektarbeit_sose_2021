@@ -18,7 +18,6 @@ import details
 
 #load vals
 title = "Projektarbeit Sose 2021"
-#navbar_title = " ".join(title.upper().replace(" ", "-"))
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 meta_tags = [{"name": "viewport", "content": "width=device-width, initial-scale=1"}]
 
@@ -57,7 +56,7 @@ app.layout = html.Div(
                     ],
                     style = {
                         "width": "300px",
-                        "max-width": "75%"
+                        "max-width": "85%"
                     }
                 ),
         
