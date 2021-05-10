@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-# from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import traceback
-# import uvicorn
+import uvicorn
 import json
 import sqlite3
 import base64
@@ -45,15 +45,18 @@ def get_control():
         return json.loads(rd.read())
 
 #function for executing other function only if the right credentials are given by API user
-def safe(credentials, function, args = []):
+def safe(credentials, function, args = [], direct = False):
     #check for credentials
     if credentials.username == "user" and credentials.password == "projekt123":
         #return cases
         try:
-            return {
-                "success": True,
-                "details": function(*args)
-            }
+            if not direct:
+                return {
+                    "success": True,
+                    "details": function(*args)
+                }
+            else:
+                return function(*args)
         except:
             return {
                 "success": False,
@@ -147,15 +150,15 @@ def upload_error(error: Error, credentials: HTTPBasicCredentials = Depends(secur
 @app.get("/heartbeat/api")
 def heartbeat_api(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        return {"heartbeat": False}
-    return safe(credentials = credentials, function = callback)
+        return {"heartbeat": True}
+    return safe(credentials = credentials, function = callback, direct = True)
 
 #GET for checking heartbeat of ESP
 @app.get("/heartbeat/esp")
 def heartbeat_esp(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
         return {"heartbeat": ESP_online}
-    return safe(credentials = credentials, function = callback)
+    return safe(credentials = credentials, function = callback, direct = True)
 
 #PUT for setting heartbeat of ESP to False
 @app.put("/heartbeat/esp/false")
@@ -170,9 +173,9 @@ def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(secur
 @app.get("/database_file")
 def download_database_file(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        return None #FileResponse(path = "./database.db", media_type="application/db",filename="./database.db")
-    return safe(credentials = credentials, function = callback)
+        return FileResponse("./database.db")
+    return safe(credentials = credentials, function = callback, direct = True)
 
-# #for debugging
-# if __name__ == "__main__":
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+#for debugging
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

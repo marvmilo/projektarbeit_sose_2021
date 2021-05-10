@@ -1,0 +1,1 @@
+curl -X GET -o database.db http://localhost:8000/database_file -H accept: application/json  -H Authorization: Basic dXNlcjpwb2pla3QxMjM=
