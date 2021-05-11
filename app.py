@@ -31,8 +31,11 @@ app.title = title
 server = app.server
 
 #init http basic auth
-user_credentials = tools.get_user_credentials()
-auth = dash_auth.BasicAuth(app, user_credentials)
+try:
+    user_credentials = tools.get_user_credentials()
+    auth = dash_auth.BasicAuth(app, user_credentials)
+except:
+    auth = None
 
 #basic layout of dash app with navbar
 app.layout = html.Div(
@@ -211,7 +214,15 @@ def update_content(url):
     
     #return API is not reachable
     if url == "/API_error":
-        return return_list(content = tools.error_page("API not reachable!"))
+        if api.heartbeat():
+            url = tools.get_user_data(tools.get_user())["url"]
+        else:
+            return return_list(content = tools.error_page("API not reachable!"))
+    
+    #init auth if not
+    print(tools.get_user())
+    if not auth:
+        tools.shutdown_server()
     
     #update url in user data
     tools.update_user_url(tools.get_user(), url)

@@ -54,6 +54,13 @@ def update_user_url(user, url):
 #update current details id of user
 def update_user_details(user, id):
     api.execute_sql(f"UPDATE user_data SET cur_details_id = \"{id}\" WHERE name = \"{user}\"")
+    
+#for shutting down server
+def shutdown_server():
+    func = flask.request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 #creates 404 page
 def not_found_page():
@@ -68,9 +75,11 @@ def not_found_page():
 
 #creates API not reachable page
 def error_page(error_msg):
+    error_style = flex_style.copy()
+    error_style["color"] = accent_color
     return html.Div(
         children = [
-            html.Div(html.H1("ERROR"), style = flex_style),
+            html.Div(html.H1("ERROR"), style = error_style),
             html.Div(html.H3(error_msg), style = flex_style)
         ]
     )
