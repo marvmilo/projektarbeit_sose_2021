@@ -155,9 +155,6 @@ def navbar_callback(url, n_measurements, n_details, n_control):
     def return_list(url = "/"):
         return [url, 0, 0, 0, tools.content_div()]
     
-    if not api.heartbeat():
-        return return_list(url = "/API_error")
-    
     #for getting details id
     def details_url():
         user = tools.get_user()
@@ -172,8 +169,11 @@ def navbar_callback(url, n_measurements, n_details, n_control):
         return f"/details/{id}"
     
     #get user data
-    user = tools.get_user()
-    user_data = tools.get_user_data(user)
+    try:
+        user = tools.get_user()
+        user_data = tools.get_user_data(user)
+    except:
+        return return_list()
     
     #set url to last kown if not defined
     if url == "/":
@@ -212,17 +212,15 @@ def update_content(url):
     ):
         return [content, measurements_nav, details_nav, control_nav]
     
-    #return API is not reachable
-    if url == "/API_error":
-        if api.heartbeat():
-            url = tools.get_user_data(tools.get_user())["url"]
-        else:
-            return return_list(content = tools.error_page("API not reachable!"))
+    #return API Error is not reachable
+    if not api.heartbeat():
+        return return_list(content = tools.error_page("API not reachable!"))
     
-    #init auth if not
+    #restart server if no authorisation initialized
     print(tools.get_user())
     if not auth:
         tools.restart_server()
+        return return_list(content = tools.error_page("HTTP Authorization not initialized!"))
     
     #update url in user data
     tools.update_user_url(tools.get_user(), url)
