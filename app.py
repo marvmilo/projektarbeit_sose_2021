@@ -222,7 +222,7 @@ def update_content(url):
     #init auth if not
     print(tools.get_user())
     if not auth:
-        tools.shutdown_server()
+        tools.restart_server()
     
     #update url in user data
     tools.update_user_url(tools.get_user(), url)

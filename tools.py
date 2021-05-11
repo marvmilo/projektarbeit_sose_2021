@@ -3,6 +3,7 @@ import flask
 import datetime
 import dash_html_components as html
 import dash_bootstrap_components as dbc
+import requests
 
 #get sql script
 import api
@@ -56,11 +57,13 @@ def update_user_details(user, id):
     api.execute_sql(f"UPDATE user_data SET cur_details_id = \"{id}\" WHERE name = \"{user}\"")
     
 #for shutting down server
-def shutdown_server():
-    func = flask.request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
+def restart_server():
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.heroku+json; version=3',
+        'Authorization': 'Basic bWFydmluLm1pbG9qZXZpY0BnbWFpbC5jb206I0hlZHUxNGZl',
+    }
+    requests.delete('https://api.heroku.com/apps/gui-projektarbeit-sose-2021/dynos/', headers=headers)
 
 #creates 404 page
 def not_found_page():
