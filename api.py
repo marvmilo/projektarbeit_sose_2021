@@ -19,7 +19,7 @@ def communicate(method, sub, data = None):
         ).text
     )
 
-#fuction for executing any SQL command
+#for executing any SQL command
 def execute_sql(*commands):
     data = json.dumps([*commands], indent = 4)
     resp = communicate(requests.post, "/sqlite3", data)
@@ -58,7 +58,9 @@ def get_measurement(id):
         
 #for getting table names
 def get_measurements():
-    callback = [m[0] for m in execute_sql("SELECT name FROM sqlite_master WHERE type='table'") if m[0].startswith("measurement_")]
+    control_data = communicate(requests.get, "/control")["details"]
+    measurements = [m[0] for m in execute_sql("SELECT name FROM sqlite_master WHERE type='table'") if m[0].startswith("measurement_")]
+    callback = [m for m in measurements if not (m == control_data["table_name"] and control_data["measurement"])]
     return callback
 
 #for checking if API is reachable

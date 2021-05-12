@@ -54,7 +54,7 @@ def content():
         #get success badge
         try:
             if data[7]:
-                success = html.H4(dbc.Badge("True", color = "success",))
+                success = html.H4(dbc.Badge("True", color = "success"))
             else:
                 raise Exception()
         except:

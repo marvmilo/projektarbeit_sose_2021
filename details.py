@@ -68,8 +68,9 @@ def content(id):
                 ],
                 justify = "end",
                 no_gutters = True,
-                style = {"font-size": "25px"} 
+                style = {"font-size": "20px"} 
             ),
+            html.Br(),
             tools.page_title(f"Details Measurement"),
             html.Div(
                 html.H1(

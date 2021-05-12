@@ -110,6 +110,7 @@ app.layout = html.Div(
             ],
             color = "primary",
             dark = True,
+            sticky = "top",
             style = {"padding": "20px 40px"}
         ),
         
@@ -217,7 +218,6 @@ def update_content(url):
         return return_list(content = tools.error_page("API not reachable!"))
     
     #restart server if no authorisation initialized
-    print(tools.get_user())
     if not auth:
         tools.restart_server()
         return return_list(content = tools.error_page("HTTP Authorization not initialized!"))
