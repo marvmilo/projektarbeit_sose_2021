@@ -15,6 +15,7 @@ error_file = "./error.json"
 
 #global vals
 ESP_online = False
+control_data = json.loads(open(control_file).read())
 
 #sqlite database values 
 db_name = "database.db"
@@ -27,6 +28,22 @@ app = FastAPI(
     description = "API for communicating between database and GUI/ESP32",
 )
 security = HTTPBasic()
+
+#format for control json
+class Control(BaseModel):
+    measurement: bool
+    name: str
+    table_name: str
+    data_package_size: int
+    standby_refresh: float
+    interval: float
+    stable_amount: int
+    tolerance_lat_acc: float
+    
+    class Config:
+        schema_extra = {
+            "example": control_data
+        }
 
 #format for posting an error message
 class Error(BaseModel):
@@ -89,6 +106,15 @@ def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depe
             }
         return callbacks
     return safe(credentials = credentials, function = callback, args = [commands])
+
+#PUT for updating control json
+@app.put("/control")
+def update_control_data(control: Control, credentials: HTTPBasicCredentials = Depends(security)):
+    def callback(control):
+        with open(control_file, "w") as wd:
+            wd.write(control.json())
+        return control.dict()
+    return safe(credentials = credentials, function = callback, args = [control])
 
 #GET for downloading control json
 @app.get("/control")
