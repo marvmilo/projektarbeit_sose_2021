@@ -17,7 +17,11 @@ error_file = "./error.json"
 ESP_online = False
 control_data = json.loads(open(control_file).read())
 
-#sqlite database values 
+#sqlite database values
+try:
+    db_url = os.environ["DATABASE_URL"]
+except KeyError:
+    db_url = "postgres://sjoacfsfjabdso:fe07a1f2881e242d0e1d92c80b9fd6b92acf96ad4abe42efc2cef2d498ce11e9@ec2-54-228-139-34.eu-west-1.compute.amazonaws.com:5432/d8ti1roti36c1h"
 db_name = "database.db"
 db_connection = sqlite3.connect(db_name, check_same_thread = False)
 db_cursor = db_connection.cursor()
@@ -202,9 +206,9 @@ def download_database_file(credentials: HTTPBasicCredentials = Depends(security)
         return FileResponse("./database.db")
     return safe(credentials = credentials, function = callback, direct = True)
 
-@app.get("/env")
-def return_env():
-    return os.environ
+@app.get("/database_url")
+def return_database_url():
+    return db_url
 
 #for debugging
 if __name__ == "__main__":
