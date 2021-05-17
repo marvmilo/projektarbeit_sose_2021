@@ -5,7 +5,8 @@ from pydantic import BaseModel
 import traceback
 import uvicorn
 import json
-import sqlite3
+#import sqlite3
+import psycopg2
 import base64
 import os
 
@@ -22,8 +23,7 @@ try:
     db_url = os.environ["DATABASE_URL"]
 except KeyError:
     db_url = "postgres://sjoacfsfjabdso:fe07a1f2881e242d0e1d92c80b9fd6b92acf96ad4abe42efc2cef2d498ce11e9@ec2-54-228-139-34.eu-west-1.compute.amazonaws.com:5432/d8ti1roti36c1h"
-db_name = "database.db"
-db_connection = sqlite3.connect(db_name, check_same_thread = False)
+db_connection = psycopg2.connect(db_url)
 db_cursor = db_connection.cursor()
 
 #init API app
@@ -56,9 +56,16 @@ class Error(BaseModel):
     
 #fuction for executing any SQL command
 def execute_sql(command):
-    db_cursor.execute(command)
+    try:
+        db_cursor.execute(command)
+    except:
+        execute_sql("ROLLBACK")
+        db_cursor.execute(command)   
     db_connection.commit()
-    return db_cursor.fetchall()
+    try:
+        return db_cursor.fetchall()
+    except:
+        return None
 
 #function for getting control file
 def get_control():
@@ -198,17 +205,6 @@ def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(secur
         ESP_online = False
         return {"heartbeat": ESP_online}
     return safe(credentials = credentials, function = callback)
-
-#GET database for debugging
-@app.get("/database_file")
-def download_database_file(credentials: HTTPBasicCredentials = Depends(security)):
-    def callback():
-        return FileResponse("./database.db")
-    return safe(credentials = credentials, function = callback, direct = True)
-
-@app.get("/database_url")
-def return_database_url():
-    return db_url
 
 #for debugging
 if __name__ == "__main__":
