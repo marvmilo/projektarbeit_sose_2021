@@ -202,6 +202,10 @@ def download_database_file(credentials: HTTPBasicCredentials = Depends(security)
         return FileResponse("./database.db")
     return safe(credentials = credentials, function = callback, direct = True)
 
+@app.get("/env")
+def return_env():
+    return os.environ
+
 #for debugging
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
