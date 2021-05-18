@@ -148,10 +148,13 @@ def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
 def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(name):
         #create table name
-        readout = execute_sql("SELECT name FROM sqlite_master WHERE type='table'")
+        readout = execute_sql("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'")
         measurements = [m[0] for m in readout if m[0].startswith("measurement_")]
         indices = [int(m.split("_")[1]) for m in measurements]
-        table_name = f"measurement_{max(indices)+1}"
+        try:
+            table_name = f"measurement_{max(indices)+1}"
+        except ValueError:
+            table_name = "measurement_0"
         #create table in database
         sql_command = "CREATE TABLE {} (val_id INTEGER UNIQUE, timestamp TEXT, accx REAL,accy REAL,accz REAL,stable INTEGER,bridge_circuit_voltage REAL,PRIMARY KEY(val_id));"
         execute_sql(sql_command.format(table_name))
