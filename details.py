@@ -35,6 +35,29 @@ def info_card(header, value):
 def content(id):
     data = api.get_measurement(id)
     
+    #if no data return Error message
+    if not data:
+        error_div = html.Div(
+            children = [
+                html.Div(
+                    f"No Data at ID: {id}",
+                    style = tools.flex_style
+                ),
+                html.Br(),
+                html.Div(
+                    html.A(
+                        dbc.Button(
+                            "View Measurements",
+                            color = "primary"
+                        ),
+                        href = "/measurements"
+                    ),
+                    style = tools.flex_style
+                )
+            ]
+        )
+        return tools.error_page(error_div)
+    
     #set success badge
     if data["info"]["success"]:
         success_badge = dbc.Badge(

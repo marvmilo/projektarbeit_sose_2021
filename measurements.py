@@ -11,6 +11,29 @@ def content():
     #get data of all measurements
     measurements = api.get_table("measurements")
     
+    #return error content if no measurements
+    if not len(measurements):
+        error_div = html.Div(
+            children = [
+                html.Div(
+                    "Nothing here till yet :(",
+                    style = tools.flex_style
+                ),
+                html.Br(),
+                html.Div(
+                    html.A(
+                        dbc.Button(
+                            "Start Measurement",
+                            color = "primary"
+                        ),
+                        href = "/control"
+                    ),
+                    style = tools.flex_style
+                )
+            ]
+        )
+        return tools.error_page(error_div)
+    
     #values
     table_rows = []
     not_known = "-"

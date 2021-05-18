@@ -35,8 +35,18 @@ def get_table(table_name):
 
 #for getting data of a measurement
 def get_measurement(id):
+    #get data of measurement
+    data = execute_sql(f"SELECT * FROM measurement_{id}")
+    try:
+        if not data["details"]["command_0"]["success"]:
+            return False
+    except:
+        pass
+    
     #get info about measurement
-    info_keys = [k[1] for k in execute_sql("PRAGMA table_info(\"measurements\")")]
+    columns = execute_sql("SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'measurements'")
+    info_keys = [k[0] for k in columns]
+    
     try:
         info_data = execute_sql(f"SELECT * FROM measurements WHERE id = {id}")[0]
     except IndexError:
@@ -48,8 +58,6 @@ def get_measurement(id):
     else:
         info["success"] = False
     
-    #get data of measurement
-    data = execute_sql(f"SELECT * FROM measurement_{id}")
     #return vals
     return {
         "info": info,
