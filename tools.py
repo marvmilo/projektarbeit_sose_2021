@@ -16,7 +16,7 @@ flex_style = {
     "justify-content": "center",
     "align-items": "center"
 }
-accent_color = "#007BFF",
+accent_color = "#007bff",
 navbutton_spacing = html.Div(style = {"width": "5px"})
 
 #for getting current user
@@ -50,11 +50,11 @@ def get_user_credentials():
 
 #update current positon of user
 def update_user_url(user, url):
-    api.execute_sql(f"UPDATE user_data SET cur_url = \"{url}\" WHERE name = \"{user}\"")
+    api.execute_sql(f"UPDATE user_data SET cur_url = '{url}' WHERE name = '{user}'")
 
 #update current details id of user
 def update_user_details(user, id):
-    api.execute_sql(f"UPDATE user_data SET cur_details_id = \"{id}\" WHERE name = \"{user}\"")
+    api.execute_sql(f"UPDATE user_data SET cur_details_id = '{id}' WHERE name = '{user}'")
     
 #for shutting down server
 def restart_server():
@@ -118,6 +118,9 @@ def content_div():
 #loads a datetime from a timestamp
 def load_datetime(timestamp):
     return datetime.datetime.strptime(timestamp, "%Y_%m_%dT%H_%M_%S_%f")
+
+def timedelta_to_seconds(time_delta):
+    return time_delta.seconds + time_delta.microseconds/1000000
 
 #function for pretty printing timestamp
 def pp_timestamp(timestamp):

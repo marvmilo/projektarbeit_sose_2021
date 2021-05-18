@@ -43,6 +43,9 @@ def get_measurement(id):
     except:
         pass
     
+    #sort data
+    data = sorted(data, key = lambda e: e[1])
+    
     #get info about measurement
     columns = execute_sql("SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'measurements'")
     info_keys = [k[0] for k in columns]
@@ -67,9 +70,9 @@ def get_measurement(id):
 #for getting table names
 def get_measurements():
     control_data = communicate(requests.get, "/control")["details"]
-    measurements = [m[0] for m in execute_sql("SELECT name FROM sqlite_master WHERE type='table'") if m[0].startswith("measurement_")]
+    measurements = [m[0] for m in execute_sql("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'") if m[0].startswith("measurement_")]
     callback = [m for m in measurements if not (m == control_data["table_name"] and control_data["measurement"])]
-    return callback
+    return sorted(callback)
 
 #for checking if API is reachable
 def heartbeat():
