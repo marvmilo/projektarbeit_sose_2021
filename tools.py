@@ -16,7 +16,7 @@ flex_style = {
     "justify-content": "center",
     "align-items": "center"
 }
-accent_color = "#007bff",
+accent_color = "#007BFF",
 navbutton_spacing = html.Div(style = {"width": "5px"})
 
 #for getting current user

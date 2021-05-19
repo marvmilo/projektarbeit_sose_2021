@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 import plotly.subplots as sp
+import math
 
 #load scripts
 import api
@@ -168,7 +169,7 @@ def content(id):
         
         #colors
         voltage_color = "#004B9B"
-        weight_color = "#0068FF"
+        weight_color = "#007BFF"
         #calculate data
         voltage_data = [round(d[-1], accuracy) for d in data["data"]]
         weight_data = [round(calculate_weight(v), accuracy) for v in voltage_data]
@@ -261,11 +262,10 @@ def content(id):
         #set legend position
         fig.update_layout(
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
+                yanchor="top",
+                y=0.99,
                 xanchor="right",
-                x=1
+                x=0.935
             )
         )
         
@@ -280,6 +280,44 @@ def content(id):
         fig.update_yaxes(title_text=f"<b style=\"color:{weight_color}\">Weight</b> in kg", secondary_y=False)
                 
         #return figure
+        return fig
+
+    def build_acceleration(data):
+        #get data
+        accx = [d[2] for d in data["data"]]
+        accy = [d[3] for d in data["data"]]
+        accz = [d[4] for d in data["data"]]
+        
+        #calculate polar cordinates
+        range_i = range(len(accx))
+        r = [math.sqrt(accx[i]**2 + accy[i]**2) for i in range_i]
+        theta = [math.atan(accy[i] / accx[i]) for i in range_i]
+        
+        #create figure
+        fig = go.Figure(
+            go.Scatterpolar(
+                r = r,
+                theta = theta,
+                thetaunit = "radians",
+                mode="markers",
+                marker = dict(
+                    size=5, 
+                    color = "#007BFF"
+                )
+            )
+        )
+        
+        #update ticks
+        fig.update_polars(
+            angularaxis = dict(
+                tickmode = "array",
+                tickvals = [0, 90, 180, 270],
+                ticktext = ["postive<br><b>X-Acceleration</b>", "postive<br><b>Y-Acceleration</b>", "negative<br><b>X-Acceleration</b>", "negative<br><b>Y-Acceleration</b>"]
+            )
+        )
+        
+        fig.update_layout(dragmode = False)
+        
         return fig
     
     #content div
@@ -356,6 +394,9 @@ def content(id):
             html.Br(),
             
             #voltage/weight graph
-            dcc.Graph(figure = build_voltage_weight(data))
+            dcc.Graph(figure = build_voltage_weight(data)),
+            
+            #acceleration
+            dcc.Graph(figure = build_acceleration(data))
         ]
     )
