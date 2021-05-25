@@ -9,7 +9,6 @@ import requests
 import api
 
 #values
-udf = "./GUI/user_data.json"
 user_table = "user_data"
 flex_style = {
     "display": "flex",
@@ -119,6 +118,7 @@ def content_div():
 def load_datetime(timestamp):
     return datetime.datetime.strptime(timestamp, "%Y_%m_%dT%H_%M_%S_%f")
 
+#converting timedelta to float seconds
 def timedelta_to_seconds(time_delta):
     return time_delta.seconds + time_delta.microseconds/1000000
 
@@ -127,3 +127,23 @@ def pp_timestamp(timestamp):
     if timestamp == "-":
         return "-"
     return load_datetime(timestamp).strftime("%a,  %d.%b.%Y, %H:%M")
+
+#for creating graph title
+def graph_title(title):
+    return {
+        "text": title,
+        "font": {
+            "size": 20,
+            "color": "black" 
+        }
+    }
+
+#replacement inputs if some are not aviable
+def replacement_ids():
+    return html.Div(
+        children = [
+            dbc.Button(id = "rename-button"),
+            dbc.Button(id = "delete-button"),
+        ],
+        style = {"display": "none"}
+    )

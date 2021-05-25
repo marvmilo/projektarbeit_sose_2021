@@ -59,7 +59,8 @@ app.layout = html.Div(
                     ],
                     style = {
                         "width": "300px",
-                        "max-width": "85%"
+                        "max-width": "85%",
+                        "padding": "20px 40px"
                     }
                 ),
         
@@ -110,8 +111,7 @@ app.layout = html.Div(
             ],
             color = "primary",
             dark = True,
-            sticky = "top",
-            style = {"padding": "20px 40px"}
+            sticky = "top"
         ),
         
         #content Div
@@ -120,10 +120,76 @@ app.layout = html.Div(
             id = "update-content-div"
         ),
         
+        #not authorized modal
+        dbc.Modal(
+            children = [
+                dbc.ModalHeader(
+                    "Not Authorized!",
+                    style = {
+                        "background-color": tools.accent_color,
+                        "color": "white"
+                    }
+                ),
+                dbc.ModalBody(
+                    children = [
+                        dbc.Row(
+                            children = [
+                                dbc.Col(
+                                    html.B(
+                                        ":(",
+                                        style = {
+                                            "font-size": 75,
+                                            "color": tools.accent_color
+                                        }
+                                    ),
+                                    width = "auto"
+                                ),
+                                dbc.Col(
+                                    html.Div(
+                                        children = [
+                                            html.Br(),
+                                            "Sorry!",
+                                            html.Br(),
+                                            "You are unauthorized",
+                                            html.Br(),
+                                            "to do this!"
+                                        ]
+                                    ),
+                                    width = "auto"
+                                )
+                            ],
+                            justify = "center"
+                        ),
+                        html.Br(),
+                        html.Div(
+                            dbc.Button(
+                                "CLOSE",
+                                color = "primary",
+                                id = "close-not-authorized"
+                            ),
+                            style = tools.flex_style
+                        )
+                    ]
+                )
+            ],
+            centered = True,
+            keyboard = True,
+            id = "not-authorized-modal",
+        ),
+        
         #url location
         dcc.Location(
             id = "url",
             refresh = False
+        ),
+        
+        #replacement inputs if some are not aviable
+        html.Div(
+            children = [
+                dbc.Button(id = "rename-button"),
+                dbc.Button(id = "delete-button"),
+            ],
+            style = {"display": "none"}
         )
     ]
 )
@@ -243,5 +309,23 @@ def update_content(url):
     else:
        return return_list()
 
+#not authorized modal
+@app.callback(
+    [Output("not-authorized-modal", "is_open")],
+    [Input("close-not-authorized", "n_clicks"),
+     Input("rename-button", "n_clicks"),
+     Input("delete-button", "n_clicks")],
+    [State("not-authorized-modal", "is_open")]
+)
+def open_modal(n_close, n_rename, n_delete, is_open):
+    if is_open:
+        return [False]
+    elif tools.get_user_data(tools.get_user())["role"] == "viewer":
+        for i in [n_rename, n_delete]:
+            if i:
+                return [True]
+    raise PreventUpdate
+
+
 if __name__ == '__main__':
-    app.run_server(debug=True, host = "0.0.0.0")
+    app.run_server(debug=True, host = "0.0.0.0", port = 7050)

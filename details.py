@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 import plotly.subplots as sp
+import numpy as np
 import math
 
 #load scripts
@@ -25,14 +26,15 @@ def info_card(header, value):
                     ),
                     style = tools.flex_style
                 ),
-                html.Br(),
+                html.Br(),html.Br(),
                 html.Div(
-                    html.H3(
+                    html.H2(
                         value,
                         style = {"color": tools.accent_color}
                     ),
                     style = tools.flex_style
                 ),
+                html.Br(),html.Br(),
                 html.Div(style = {"width": "300px"})
             ],
         ),
@@ -250,13 +252,7 @@ def content(id):
             
         #add figure title
         fig.update_layout(
-            title = {
-                "text": "VOLTAGE/WEIGHT TREND",
-                "font": {
-                    "size": 20,
-                    "color": "black" 
-                }
-            }
+            title = tools.graph_title("VOLTAGE/WEIGHT COURSE")
         )
         
         #set legend position
@@ -288,20 +284,47 @@ def content(id):
         accy = [d[3] for d in data["data"]]
         accz = [d[4] for d in data["data"]]
         
+        #create figure
+        fig = go.Figure()
+        
+        #add stable cicle
+        phi = np.linspace(0, 2*math.pi, 100)
+        x = data["info"]["tolerance_latacc"] * np.cos(phi)
+        y = data["info"]["tolerance_latacc"] * np.sin(phi)
+        r = np.sqrt(x**2 + y**2)
+        J = np.where(y<0)
+        theta  = np.arctan2(y, x)
+        theta[J]= theta[J] + 2*math.pi
+        #add to figure
+        fig.add_trace(
+            go.Scatterpolar(
+                r=r,
+                theta=theta *180 / np.pi,
+                mode='lines', 
+                fill='toself', 
+                name='<b>Stable</b> Area',
+                opacity = 0.75,
+                line = dict(
+                    color = "#004B9B"
+                )
+            )
+        )
+        
         #calculate polar cordinates
         range_i = range(len(accx))
         r = [math.sqrt(accx[i]**2 + accy[i]**2) for i in range_i]
         theta = [math.atan(accy[i] / accx[i]) for i in range_i]
         
         #create figure
-        fig = go.Figure(
+        fig.add_trace(
             go.Scatterpolar(
                 r = r,
                 theta = theta,
                 thetaunit = "radians",
                 mode="markers",
+                name = "<b>Acceleration</b> in m/s²",
                 marker = dict(
-                    size=5, 
+                    size=7.5, 
                     color = "#007BFF"
                 )
             )
@@ -312,11 +335,18 @@ def content(id):
             angularaxis = dict(
                 tickmode = "array",
                 tickvals = [0, 90, 180, 270],
-                ticktext = ["postive<br><b>X-Acceleration</b>", "postive<br><b>Y-Acceleration</b>", "negative<br><b>X-Acceleration</b>", "negative<br><b>Y-Acceleration</b>"]
+                ticktext = ["postive<br><b>X-Acc</b>", "postive<br><b>Y-Acc</b>", "negative<br><b>X-Acc</b>", "negative<br><b>Y-Acc</b>"]
             )
         )
         
-        fig.update_layout(dragmode = False)
+        #upoate layout
+        fig.update_layout(
+            dragmode = False
+        )
+        
+        fig.update_layout(
+            title = tools.graph_title("X/Y - ACCELERATION")
+        )
         
         return fig
     
@@ -371,13 +401,13 @@ def content(id):
             dbc.Row(
                 children = [
                     dbc.Col(
-                        info_card("INTERVAL", data["info"]["interval"])
+                        info_card("INTERVAL", f"{data['info']['interval']} sec")
                     ),
                     dbc.Col(
-                        info_card("ACCELERATION TOLERANCE", data["info"]["tolerance_latacc"])
+                        info_card("ACCELERATION TOLERANCE", f"{data['info']['tolerance_latacc']} m/s²")
                     ),
                     dbc.Col(
-                        info_card("STABLE AMOUNT", data["info"]["stable_amount"])
+                        info_card("STABLE AMOUNT", f"{data['info']['stable_amount']} vals")
                     ),
                 ]
             ),
@@ -396,7 +426,55 @@ def content(id):
             #voltage/weight graph
             dcc.Graph(figure = build_voltage_weight(data)),
             
-            #acceleration
-            dcc.Graph(figure = build_acceleration(data))
+            #acceleration and edit row
+            dbc.Row(
+                children = [
+                    dbc.Col(
+                        children = [
+                            dcc.Graph(figure = build_acceleration(data)),
+                            html.Div(style = {"width": "350px"})
+                        ]
+                    ),
+                    dbc.Col(
+                        children = [
+                            html.Br(),
+                            dbc.Alert(
+                                children = [
+                                    html.H5(
+                                        "EDIT MEASUREMENT",
+                                        style = {"color": "black"}
+                                    ),
+                                    html.Br(),
+                                    "Rename Measurement:",
+                                    html.Br(),html.Br(),
+                                    dbc.Input(
+                                        id = "rename-input",
+                                        placeholder = "Enter new name ..."
+                                    ),
+                                    html.Br(),
+                                    dbc.Button(
+                                        "RENAME",
+                                        id = "rename-button",
+                                        color = "primary",
+                                        block = True
+                                    ),
+                                    html.Br(),html.Br(),
+                                    "Delete Measurement:",
+                                    html.Br(),html.Br(),
+                                    dbc.Button(
+                                        "DELETE",
+                                        id = "delete-button",
+                                        color = "primary",
+                                        block = True
+                                    ),
+                                    html.Br(),
+                                    html.Div(style = {"width": "300px"})
+                                ],
+                                color = "primary"
+                            )
+                        ]
+                    )
+                ]
+            )
         ]
     )
