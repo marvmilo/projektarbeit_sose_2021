@@ -9,12 +9,14 @@ import plotly.express as px
 import pandas as pd
 import os
 import json
+import time
 
 #import scripts
 import api
 import tools
 import measurements
 import details
+import control
 
 #load vals
 title = "Projektarbeit Sose 2021"
@@ -123,13 +125,7 @@ app.layout = html.Div(
         #not authorized modal
         dbc.Modal(
             children = [
-                dbc.ModalHeader(
-                    "Not Authorized!",
-                    style = {
-                        "background-color": tools.accent_color,
-                        "color": "white"
-                    }
-                ),
+                tools.modal_header("Not Authorized!"),
                 dbc.ModalBody(
                     children = [
                         dbc.Row(
@@ -184,13 +180,7 @@ app.layout = html.Div(
         ),
         
         #replacement inputs if some are not aviable
-        html.Div(
-            children = [
-                dbc.Button(id = "rename-button"),
-                dbc.Button(id = "delete-button"),
-            ],
-            style = {"display": "none"}
-        )
+        tools.replacments_ids()
     ]
 )
 
@@ -240,9 +230,10 @@ def navbar_callback(url, n_measurements, n_details, n_control):
         user = tools.get_user()
         user_data = tools.get_user_data(user)
     except:
-        return return_list()
+        return return_list(url = "/api_not_reachable")
     
     #set url to last kown if not defined
+    print(user_data["url"])
     if url == "/":
         return return_list(url = user_data["url"])
     if url == "/details":
@@ -288,8 +279,9 @@ def update_content(url):
         tools.restart_server()
         return return_list(content = tools.error_page("HTTP Authorization not initialized!"))
     
-    #update url in user data
-    tools.update_user_url(tools.get_user(), url)
+    #update url in user data#
+    if not url == "/":
+        tools.update_user_url(tools.get_user(), url)
     
     #return measurements content
     if url == "/measurements":
@@ -303,7 +295,7 @@ def update_content(url):
     
     #return control content
     elif url == "/control":
-        return return_list(content = "control content", control_nav = True)
+        return return_list(content = control.content(), control_nav = True)
     
     #else page was not found
     else:
@@ -326,6 +318,59 @@ def open_modal(n_close, n_rename, n_delete, is_open):
                 return [True]
     raise PreventUpdate
 
+#renaming modal
+@app.callback(
+    [Output("rename-modal", "is_open"),
+     Output("old-name", "children"),
+     Output("new-name", "children"),
+     Output("rename-input", "valid"),
+     Output("rename-input", "invalid")],
+    [Input("rename-button", "n_clicks")],
+    [State("rename-input", "value"),
+     State("details-name", "children"),
+     State("url", "pathname")]
+)
+def rename_measurement(n_clicks, new_name, old_name, url):
+    id = int(url.split("/")[2])
+    if n_clicks and tools.get_user_data(tools.get_user())["role"] == "admin":
+        if new_name:
+            api.execute_sql(f"UPDATE measurements SET name = '{new_name}' WHERE id = {id}")
+            return [True, old_name, new_name, True, False]
+        else:
+            return [False, "", "", False, True]
+    raise PreventUpdate
+
+#open/close delete are you sure modal
+@app.callback(
+    [Output("delete-modal-?", "is_open")],
+    [Input("delete-button", "n_clicks"),
+     Input("delete-no", "n_clicks"),
+     Input("delete-yes", "n_clicks")],
+    [State("delete-modal-?", "is_open")]
+)
+def open_delete_are_you_sure(n_open, n_close, n_yes, is_open):
+    if tools.get_user_data(tools.get_user())["role"] == "admin":
+        if n_open or n_close or n_yes:
+            return [not is_open]
+    raise PreventUpdate
+
+#confirming deleted measurement
+@app.callback(
+    [Output("delete-modal-confirm", "is_open")],
+    [Input("delete-yes", "n_clicks"),
+     Input("delete-close", "n_clicks")],
+    [State("delete-modal-confirm", "is_open"),
+     State("url", "pathname")]
+)
+def delete_measurement(n_yes, n_close, is_open, url):
+    time.sleep(0.5)
+    id = int(url.split("/")[2])
+    if tools.get_user_data(tools.get_user())["role"] == "admin":
+        if n_yes or n_close:
+            print(api.execute_sql(f"DELETE FROM measurements WHERE id = {id}"))
+            print(api.execute_sql(f"DROP TABLE measurement_{id}"))
+            return [not is_open]
+    raise PreventUpdate
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host = "0.0.0.0", port = 7050)
+    app.run_server(debug=True, host = "0.0.0.0")

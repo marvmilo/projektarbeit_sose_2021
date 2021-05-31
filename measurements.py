@@ -47,6 +47,20 @@ def content():
             }
         )
     
+    #function for for creating header cell
+    def header_cell(header):
+        return html.Td(
+            children = [
+                html.B(header)
+            ],
+            style = {
+                "background-color": tools.light_accent_color,
+                "border-width": "0px",
+                "position": "sticky",
+                "top": 0
+            }
+        )
+    
     #iter over measurements
     for measurement in api.get_measurements():
         #get data of current measurement
@@ -118,14 +132,13 @@ def content():
                         html.Thead(
                             html.Tr(
                                 children = [
-                                    html.Th("ID"),
-                                    html.Th("NAME"),
-                                    html.Th("TIMESTAMP"),
-                                    html.Th("DURATION"),
-                                    html.Th("SUCCESS"),
-                                    html.Th("")
-                                ],
-                                className="table-primary"
+                                    header_cell("ID"),
+                                    header_cell("NAME"),
+                                    header_cell("TIMESTAMP"),
+                                    header_cell("DURATION"),
+                                    header_cell("SUCCESS"),
+                                    header_cell("")
+                                ]
                             )
                         ),
                         html.Tbody(
@@ -133,8 +146,9 @@ def content():
                         )
                     ]
                 ),
-                style= {
-                    "overflowX": "scroll"
+                style = {
+                    "overflow": "auto",
+                    "height": "100%"
                 }
             )
         ]

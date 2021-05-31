@@ -16,6 +16,7 @@ flex_style = {
     "align-items": "center"
 }
 accent_color = "#007BFF",
+light_accent_color = "#CCE5FF"
 navbutton_spacing = html.Div(style = {"width": "5px"})
 
 #for getting current user
@@ -25,6 +26,8 @@ def get_user():
 #for getting user data
 def get_user_data(user = None):
     user_data = api.get_table("user_data")
+    #print(user_data)
+    
     user_data = {
         u[0]: {
             "password": u[1],
@@ -139,11 +142,27 @@ def graph_title(title):
     }
 
 #replacement inputs if some are not aviable
-def replacement_ids():
+def replacments_ids():
     return html.Div(
         children = [
             dbc.Button(id = "rename-button"),
             dbc.Button(id = "delete-button"),
+            dbc.Button(id = "delete-yes"),
+            dbc.Button(id = "delete-no"),
+            dbc.Button(id = "delete-close"),
+            dbc.Modal(id = "delete-modal"),
+            html.Div(id = "delete-modal-content"),
+            html.Div(id = "details-name")
         ],
         style = {"display": "none"}
+    )
+
+#for creating a modal header
+def modal_header(title):
+    return dbc.ModalHeader(
+        title,
+        style = {
+            "background-color": accent_color,
+            "color": "white"
+        }
     )

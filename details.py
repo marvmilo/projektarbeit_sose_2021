@@ -1,9 +1,11 @@
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table
 import plotly.graph_objects as go
 import plotly.subplots as sp
 import numpy as np
+import datetime as dt
 import math
 
 #load scripts
@@ -255,16 +257,6 @@ def content(id):
             title = tools.graph_title("VOLTAGE/WEIGHT COURSE")
         )
         
-        #set legend position
-        fig.update_layout(
-            legend=dict(
-                yanchor="top",
-                y=0.99,
-                xanchor="right",
-                x=0.935
-            )
-        )
-        
         #update hovermode
         fig.update_layout(hovermode="x unified")
         
@@ -350,6 +342,88 @@ def content(id):
         
         return fig
     
+    #for building table
+    def build_table(data):
+        table_rows = []
+        
+        #function for creating cell
+        def cell(content):
+            return html.Td(
+                content
+            )
+        
+        #function for for creating header cell
+        def header_cell(header, unit):
+            return html.Td(
+                children = [
+                    html.B(header),
+                    html.Br(),
+                    unit  
+                ],
+                style = {
+                    "background-color": tools.light_accent_color,
+                    "border-width": "0px",
+                    "position": "sticky",
+                    "top": 0
+                }
+            )
+        
+        #iter over data
+        for row in data["data"]:
+            
+            #calculate runtime
+            runtime = tools.load_datetime(row[1]) - tools.load_datetime(data["info"]["timestamp"])
+            second = tools.timedelta_to_seconds(runtime)    
+            
+            #success badge
+            if row[-2]:
+                success = html.H5(dbc.Badge("True", color = "success"))
+            else:
+                success = html.H5(dbc.Badge("False", color = "danger"))
+            
+            table_rows.append(
+                html.Tr(
+                    children=[
+                        cell(row[0]),
+                        cell(round(second, 2)),
+                        cell(round(row[-1], 2)),
+                        cell(round(calculate_weight(row[-1]), 2)),
+                        cell(round(row[2], 2)),
+                        cell(round(row[3], 2)),
+                        cell(round(row[4], 2)),
+                        cell(success)
+                    ]
+                )
+            )
+        
+        return html.Div(
+            dbc.Table(
+                children = [
+                    html.Thead(
+                        html.Tr(
+                            children = [
+                                header_cell("ID", ""),
+                                header_cell("RUNTIME", "in seconds"),
+                                header_cell("VOLTAGE", "in V"),
+                                header_cell("WEIGHT", "in kg"),
+                                header_cell("ACC. X", "in m/s²"),
+                                header_cell("ACC. Y", "in m/s²"),
+                                header_cell("ACC. Z", "in m/s²"),
+                                header_cell("STABLE", "status")
+                            ]
+                        )
+                    ),
+                    html.Tbody(
+                        children = table_rows,
+                    )
+                ]
+            ),
+            style = {
+                "overflow": "auto",
+                "height": "500px"
+            }
+        )
+    
     #content div
     return html.Div(
         children = [
@@ -378,7 +452,8 @@ def content(id):
             html.Div(
                 html.H1(
                     data["info"]["name"],
-                    style = {"color": tools.accent_color}
+                    style = {"color": tools.accent_color},
+                    id = "details-name"
                 ),
                 style = tools.flex_style
             ),
@@ -416,7 +491,7 @@ def content(id):
             
             #calculated weight
             html.Div(
-                html.H5("CALCULATED WEIGHT"),
+                html.H5("FINAL WEIGHT"),
                 style = tools.flex_style
             ),
             weight_div,
@@ -475,6 +550,137 @@ def content(id):
                         ]
                     )
                 ]
+            ),
+            html.Br(),
+            
+            #table at end of page
+            build_table(data),
+            
+            #rename Modal
+            dbc.Modal(
+                children = [
+                    tools.modal_header("Measurement renamed!"),
+                    dbc.ModalBody(
+                        children = [
+                            html.Br(),
+                            dbc.Row(
+                                children = [
+                                    dbc.Col(
+                                        html.B(
+                                            "",
+                                            style = {
+                                                "font-size": 30,
+                                                "color": tools.accent_color
+                                            },
+                                            id = "old-name"
+                                        ),
+                                        width = "auto"
+                                    ),
+                                    dbc.Col(
+                                        html.B(
+                                            "➞",
+                                            style = {
+                                                "font-size": 30
+                                            }
+                                        ),
+                                        width = "auto"
+                                    ),
+                                    dbc.Col(
+                                        html.B(
+                                            "",
+                                            style = {
+                                                "font-size": 30,
+                                                "color": tools.accent_color
+                                            },
+                                            id = "new-name"
+                                        ),
+                                        width = "auto"
+                                    )
+                                ],
+                                justify = "center"
+                            ),
+                            html.Br(),
+                            html.Div(
+                                "Reload page for displaying new name.",
+                                style = tools.flex_style
+                            ),
+                            html.Br()
+                        ]
+                    )
+                ],
+                centered = True,
+                keyboard = True,
+                size = "lg",
+                id = "rename-modal"
+            ),
+            
+            #delete Modal are you Sure
+            dbc.Modal(
+                children = [
+                    tools.modal_header("Delete Measurment?"),
+                    dbc.ModalBody(
+                        children = [
+                            html.Div(
+                                f"Are You sure to delete this measurement?",
+                                style = tools.flex_style
+                            ),
+                            html.Br(),
+                            dbc.Row(
+                                children = [
+                                    dbc.Col(
+                                        dbc.Button(
+                                            "YES",
+                                            color = "primary",
+                                            id = "delete-yes"
+                                        ),
+                                        width = "auto"
+                                    ),
+                                    dbc.Col(
+                                        dbc.Button(
+                                            "NO",
+                                            color = "primary",
+                                            id = "delete-no"
+                                        ),
+                                        width = "auto"
+                                    )
+                                ],
+                                justify = "center"
+                            ),
+                            html.Br()
+                        ]
+                    )
+                ],
+                centered = True,
+                keyboard = True,
+                id = "delete-modal-?"
+            ),
+            
+            #delete confirm mdodal
+            dbc.Modal(
+                children = [
+                    tools.modal_header("Measurment deleted!"),
+                    dbc.ModalBody(
+                        children = [
+                            html.Div(
+                                "This measurement was deleted!",
+                                style = tools.flex_style
+                            ),
+                            html.Br(),
+                            html.Div(
+                                dbc.Button(
+                                    "CLOSE",
+                                    id = "delete-close",
+                                    color = "primary"
+                                ),
+                                style = tools.flex_style
+                            ),
+                            html.Br()
+                        ]
+                    )
+                ],
+                centered = True,
+                keyboard = True,
+                id = "delete-modal-confirm"
             )
         ]
     )

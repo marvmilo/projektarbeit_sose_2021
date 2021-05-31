@@ -23,6 +23,7 @@ def communicate(method, sub, data = None):
 def execute_sql(*commands):
     data = json.dumps([*commands], indent = 4)
     resp = communicate(requests.post, "/sqlite3", data)
+    #print(commands, "\n", resp)
     if len([*commands]) == 1:
         if resp["success"]:
             if resp["details"]["command_0"]["success"]:
