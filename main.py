@@ -98,7 +98,7 @@ def safe(credentials, function, args = [], direct = False):
         }
 
 #POST for executing SQL commands in database
-@app.post("/sqlite3")
+@app.post("/sql")
 def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(commands):
         callbacks = dict()
@@ -177,9 +177,17 @@ def stop_measurement(credentials: HTTPBasicCredentials = Depends(security)):
         return control
     return safe(credentials = credentials, function = callback)
 
+#GET for downloading control json
+@app.get("/error")
+def get_error_json(credentials: HTTPBasicCredentials = Depends(security)):
+    def callback():
+        with open(error_file, "r") as rd:
+            return json.loads(rd.read())
+    return safe(credentials = credentials, function = callback)
+
 #PUT function for returing error form ESP
 @app.put("/error")
-def upload_error(error: Error, credentials: HTTPBasicCredentials = Depends(security)):
+def upload_error_json(error: Error, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(error):
         with open(error_file, "w") as wd:
             wd.write(error.json())
