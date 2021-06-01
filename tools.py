@@ -26,7 +26,6 @@ def get_user():
 #for getting user data
 def get_user_data(user = None):
     user_data = api.get_table("user_data")
-    #print(user_data)
     
     user_data = {
         u[0]: {

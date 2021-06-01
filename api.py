@@ -22,8 +22,8 @@ def communicate(method, sub, data = None):
 #for executing any SQL command
 def execute_sql(*commands):
     data = json.dumps([*commands], indent = 4)
-    resp = communicate(requests.post, "/sqlite3", data)
-    #print(commands, "\n", resp)
+    resp = communicate(requests.post, "/sql", data)
+    print(commands, "\n", resp)
     if len([*commands]) == 1:
         if resp["success"]:
             if resp["details"]["command_0"]["success"]:
@@ -67,10 +67,14 @@ def get_measurement(id):
         "info": info,
         "data": data
     }
+
+#for getting control json
+def get_control():
+    return communicate(requests.get, "/control")["details"]
         
 #for getting table names
 def get_measurements():
-    control_data = communicate(requests.get, "/control")["details"]
+    control_data = get_control()
     measurements = [m[0] for m in execute_sql("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'") if m[0].startswith("measurement_")]
     callback = [m for m in measurements if not (m == control_data["table_name"] and control_data["measurement"])]
     return sorted(callback)

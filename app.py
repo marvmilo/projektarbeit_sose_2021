@@ -229,11 +229,12 @@ def navbar_callback(url, n_measurements, n_details, n_control):
     try:
         user = tools.get_user()
         user_data = tools.get_user_data(user)
+        if not user_data:
+            raise Exception
     except:
         return return_list(url = "/api_not_reachable")
     
     #set url to last kown if not defined
-    print(user_data["url"])
     if url == "/":
         return return_list(url = user_data["url"])
     if url == "/details":
