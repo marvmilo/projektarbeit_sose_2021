@@ -307,10 +307,12 @@ def update_content(url):
     [Output("not-authorized-modal", "is_open")],
     [Input("close-not-authorized", "n_clicks"),
      Input("rename-button", "n_clicks"),
-     Input("delete-button", "n_clicks")],
+     Input("delete-button", "n_clicks"),
+     Input("start-measurement-button", "n_clicks"),
+     Input("change-settings-button", "n_clicks")],
     [State("not-authorized-modal", "is_open")]
 )
-def open_modal(n_close, n_rename, n_delete, is_open):
+def open_modal(n_close, n_rename, n_delete, n_start, n_settings, is_open):
     if is_open:
         return [False]
     elif tools.get_user_data(tools.get_user())["role"] == "viewer":

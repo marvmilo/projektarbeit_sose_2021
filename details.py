@@ -87,7 +87,7 @@ def content(id):
     accuracy = 2
     time_data = []
     for d in data["data"]:
-        time_delta = tools.load_datetime(d[1]) - tools.load_datetime(data["info"]["timestamp"])
+        time_delta = tools.load_datetime(d[1]) - tools.load_datetime(data["data"][0][1])
         seconds = round(tools.timedelta_to_seconds(time_delta), accuracy)
         time_data.append(seconds)
     
@@ -206,7 +206,7 @@ def content(id):
         if data["info"]["success"]:
             fig.add_trace(
                 go.Scatter(
-                    x = time_data[-10:],
+                    x = time_data[-data["info"]["stable_amount"]:],
                     y = [round(calculate_final_weight(), accuracy) for i in range(data["info"]["stable_amount"])],
                     name = "Final Weight",
                     mode = "lines",
@@ -239,19 +239,22 @@ def content(id):
                 i = 0
         
         for phase in stable_phases:
-            measurement_start = tools.load_datetime(data["info"]["timestamp"])
+            measurement_start = tools.load_datetime(data["data"][0][1])
             begin = tools.timedelta_to_seconds(phase[0] - measurement_start)
             end = tools.timedelta_to_seconds(phase[1] - measurement_start)
             
             #add to fig
-            fig.add_vrect(
-                x0 = begin - data["info"]["interval"],
-                x1 = end +  data["info"]["interval"],
-                fillcolor = tools.accent_color[0],
-                opacity = 0.15,
-                line_width = 0
-            )
-            
+            try:
+                fig.add_vrect(
+                    x0 = begin - data["info"]["interval"]/2,
+                    x1 = end +  data["info"]["interval"]/2,
+                    fillcolor = tools.accent_color[0],
+                    opacity = 0.15,
+                    line_width = 0
+                )
+            except TypeError:
+                pass
+                
         #add figure title
         fig.update_layout(
             title = tools.graph_title("VOLTAGE/WEIGHT COURSE")
@@ -280,27 +283,30 @@ def content(id):
         fig = go.Figure()
         
         #add stable cicle
-        phi = np.linspace(0, 2*math.pi, 100)
-        x = data["info"]["tolerance_latacc"] * np.cos(phi)
-        y = data["info"]["tolerance_latacc"] * np.sin(phi)
-        r = np.sqrt(x**2 + y**2)
-        J = np.where(y<0)
-        theta  = np.arctan2(y, x)
-        theta[J]= theta[J] + 2*math.pi
-        #add to figure
-        fig.add_trace(
-            go.Scatterpolar(
-                r=r,
-                theta=theta *180 / np.pi,
-                mode='lines', 
-                fill='toself', 
-                name='<b>Stable</b> Area',
-                opacity = 0.75,
-                line = dict(
-                    color = "#004B9B"
+        try:
+            phi = np.linspace(0, 2*math.pi, 100)
+            x = data["info"]["tolerance_latacc"] * np.cos(phi)
+            y = data["info"]["tolerance_latacc"] * np.sin(phi)
+            r = np.sqrt(x**2 + y**2)
+            J = np.where(y<0)
+            theta  = np.arctan2(y, x)
+            theta[J]= theta[J] + 2*math.pi
+            #add to figure
+            fig.add_trace(
+                go.Scatterpolar(
+                    r=r,
+                    theta=theta *180 / np.pi,
+                    mode='lines', 
+                    fill='toself', 
+                    name='<b>Stable</b> Area',
+                    opacity = 0.75,
+                    line = dict(
+                        color = "#004B9B"
+                    )
                 )
             )
-        )
+        except np.core._exceptions._UFuncNoLoopError:
+            pass
         
         #calculate polar cordinates
         range_i = range(len(accx))
@@ -331,11 +337,23 @@ def content(id):
             )
         )
         
-        #upoate layout
-        fig.update_layout(
-            dragmode = False
+        #update range
+        try:
+            if max(r) > data["info"]["tolerance_latacc"]:
+                radial_range = max(r)
+            else:
+                radial_range = data["info"]["tolerance_latacc"]
+            radial_range += radial_range/10
+        except:
+            radial_range = 0
+        
+        fig.update_polars(
+            radialaxis = dict(
+                range = [0, radial_range]
+            )
         )
         
+        #upoate title
         fig.update_layout(
             title = tools.graph_title("X/Y - ACCELERATION")
         )
@@ -372,7 +390,7 @@ def content(id):
         for row in data["data"]:
             
             #calculate runtime
-            runtime = tools.load_datetime(row[1]) - tools.load_datetime(data["info"]["timestamp"])
+            runtime = tools.load_datetime(row[1]) - tools.load_datetime(data["data"][0][1])
             second = tools.timedelta_to_seconds(runtime)    
             
             #success badge

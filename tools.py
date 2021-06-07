@@ -118,6 +118,8 @@ def content_div():
 
 #loads a datetime from a timestamp
 def load_datetime(timestamp):
+    if timestamp == "-":
+        return None
     return datetime.datetime.strptime(timestamp, "%Y_%m_%dT%H_%M_%S_%f")
 
 #converting timedelta to float seconds
@@ -149,6 +151,8 @@ def replacments_ids():
             dbc.Button(id = "delete-yes"),
             dbc.Button(id = "delete-no"),
             dbc.Button(id = "delete-close"),
+            dbc.Button(id = "start-measurement-button"),
+            dbc.Button(id = "change-settings-button"),
             dbc.Modal(id = "delete-modal"),
             html.Div(id = "delete-modal-content"),
             html.Div(id = "details-name")
