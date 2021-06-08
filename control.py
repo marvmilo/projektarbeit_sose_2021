@@ -1,4 +1,5 @@
 import dash_bootstrap_components as dbc
+import dash_core_components as dcc
 import dash_html_components as html
 import requests
 
@@ -6,9 +7,75 @@ import requests
 import api
 import tools
 
+#start measurement buttons
+def start_measurement_button():
+    return dbc.Button(
+        children = [
+            html.Br(),
+            html.Div(
+                html.B(
+                    "START",
+                    style = {"font-size": 25}
+                ),
+                style = tools.flex_style
+            ),
+            html.Div(
+                html.Div(
+                    "a Measurement",
+                    style = {"font-size": 20}
+                ),
+                style = tools.flex_style
+            ),
+            html.Br()
+        ],
+        color = "primary",
+        id = "start-measurement-button",
+        style = {"width": "300px"}
+    )
+
+#show running measurement
+def measurement_running():
+    return html.Div(
+        children = [
+            dbc.Progress(
+                children = [
+                    html.B(
+                        "Measurement is running!",
+                        style = {"font-size": 45}
+                    )
+                ],
+                value = 100,
+                striped = True,
+                animated = True,
+                style = {
+                    "width": "600px",
+                    "height": "150px"
+                }
+            ),
+            html.Div(
+                html.Div(
+                    "waiting for results ...",
+                    style = {"font-size": 20}
+                ),
+                style = tools.flex_style
+            ),
+            dcc.Interval(
+                id = "measuring-interval",
+                interval = 10*1000,
+                n_intervals = 0
+            )
+        ]
+    )
+
 #control esp content
-def control_esp():
+def content():
     settings = api.get_control()
+    
+    #check if measuring is running
+    if settings["measurement"]:
+        measuring_content = measurement_running(),
+    else:
+        measuring_content = start_measurement_button()
     
     #create a table row for settings
     def settings_table_row(name, value, unit , integer = False):
@@ -41,28 +108,10 @@ def control_esp():
             tools.page_title("Control ESP"),
             html.Br(),html.Br(),
             html.Div(
-                dbc.Button(
-                    children = [
-                        html.Br(),
-                        html.Div(
-                            html.B(
-                                "START",
-                                style = {"font-size": 25}
-                            ),
-                            style = tools.flex_style
-                        ),
-                        html.Div(
-                            html.Div(
-                                "a Measurement",
-                                style = {"font-size": 20}
-                            ),
-                            style = tools.flex_style
-                        ),
-                        html.Br()
-                    ],
-                    color = "primary",
-                    id = "start-measurement-button",
-                    style = {"width": "300px"}
+                html.Div(
+                    measuring_content,
+                    id = "measuring-content",
+                    style = {"height": "150px"}
                 ),
                 style = tools.flex_style
             ),
@@ -110,28 +159,4 @@ def control_esp():
                 style = tools.flex_style
             )
         ]
-    )
-
-#live monotiorin content
-def live_monitoring():
-    return html.Div(
-        children = [
-            tools.page_title("Live Monitoring")
-        ]
-    )
-
-#creating content
-def content():
-    control_data = api.communicate(requests.get, "/control")["details"]
-    
-    #set content
-    if control_data["measurement"]:
-        content = live_monitoring()
-    else:
-        content = control_esp()
-    
-    #return content
-    return html.Div(
-        content,
-        id = "control-content"
     )

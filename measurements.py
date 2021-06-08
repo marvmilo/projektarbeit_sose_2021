@@ -84,7 +84,7 @@ def content():
         
         #get duration
         try:
-            duration = data[4]
+            duration = tools.pp_duration(data[4])
         except:
             duration = not_known
         
@@ -148,7 +148,7 @@ def content():
                 ),
                 style = {
                     "overflow": "auto",
-                    "height": "100%"
+                    "height": "600px"
                 }
             )
         ]

@@ -315,8 +315,8 @@ def update_content(url):
 def open_modal(n_close, n_rename, n_delete, n_start, n_settings, is_open):
     if is_open:
         return [False]
-    elif tools.get_user_data(tools.get_user())["role"] == "viewer":
-        for i in [n_rename, n_delete]:
+    if tools.get_user_data(tools.get_user())["role"] == "viewer":
+        for i in [n_rename, n_delete, n_start, n_settings]:
             if i:
                 return [True]
     raise PreventUpdate
@@ -360,18 +360,17 @@ def open_delete_are_you_sure(n_open, n_close, n_yes, is_open):
 #confirming deleted measurement
 @app.callback(
     [Output("delete-modal-confirm", "is_open")],
-    [Input("delete-yes", "n_clicks"),
-     Input("delete-close", "n_clicks")],
+    [Input("delete-yes", "n_clicks")],
     [State("delete-modal-confirm", "is_open"),
      State("url", "pathname")]
 )
-def delete_measurement(n_yes, n_close, is_open, url):
+def delete_measurement(n_yes, is_open, url):
     time.sleep(0.5)
     id = int(url.split("/")[2])
     if tools.get_user_data(tools.get_user())["role"] == "admin":
-        if n_yes or n_close:
-            print(api.execute_sql(f"DELETE FROM measurements WHERE id = {id}"))
-            print(api.execute_sql(f"DROP TABLE measurement_{id}"))
+        if n_yes:
+            api.execute_sql(f"DELETE FROM measurements WHERE id = {id}")
+            api.execute_sql(f"DROP TABLE measurement_{id}")
             return [not is_open]
     raise PreventUpdate
 

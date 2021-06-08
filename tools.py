@@ -132,6 +132,12 @@ def pp_timestamp(timestamp):
         return "-"
     return load_datetime(timestamp).strftime("%a,  %d.%b.%Y, %H:%M")
 
+#for pretty printing duration
+def pp_duration(duration):
+    duration_list = duration.split(" ")
+    duration_list[-2] = duration_list[-2][:3]
+    return " ".join(duration_list)
+
 #for creating graph title
 def graph_title(title):
     return {

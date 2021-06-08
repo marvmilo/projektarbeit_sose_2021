@@ -1,5 +1,6 @@
 import json
 import requests
+import re
 
 #api values
 api_url = "https://api-projektarbeit-sose-2021.herokuapp.com"
@@ -77,7 +78,15 @@ def get_measurements():
     control_data = get_control()
     measurements = [m[0] for m in execute_sql("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'") if m[0].startswith("measurement_")]
     callback = [m for m in measurements if not (m == control_data["table_name"] and control_data["measurement"])]
-    return sorted(callback)
+    
+    #sort callback
+    def atoi(text):
+        return int(text) if text.isdigit() else text
+    def natural_keys(text):
+        return [ atoi(c) for c in re.split(r'(\d+)', text)]
+    callback.sort(key = natural_keys)
+    
+    return callback
 
 #for checking if API is reachable
 def heartbeat():

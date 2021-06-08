@@ -484,7 +484,7 @@ def content(id):
                         info_card("TIMESTAMP", tools.pp_timestamp(data["info"]["timestamp"]))
                     ),
                     dbc.Col(
-                        info_card("DURATION", data["info"]["duration"])
+                        info_card("DURATION", tools.pp_duration(data["info"]["duration"]))
                     )
                 ],
                 style = {"marginBottom": 8}
@@ -685,12 +685,14 @@ def content(id):
                             ),
                             html.Br(),
                             html.Div(
-                                dbc.Button(
-                                    "CLOSE",
-                                    id = "delete-close",
-                                    color = "primary"
+                                html.A(
+                                    dbc.Button(
+                                        "CLOSE",
+                                        color = "primary"
+                                    ),
+                                    href = "/measurements"
                                 ),
-                                style = tools.flex_style
+                                style = tools.flex_style,
                             ),
                             html.Br()
                         ]
