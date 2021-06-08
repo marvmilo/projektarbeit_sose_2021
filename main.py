@@ -137,9 +137,9 @@ def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
 #GET for downloading control json and updating heartbeat of esp
 @app.get("/control/esp")
 def get_control_data_ESP(credentials: HTTPBasicCredentials = Depends(security)):
-    global ESP_online
-    ESP_online = True
     def callback():
+        global ESP_online
+        ESP_online = True
         return get_control()
     return safe(credentials = credentials, function = callback)
 
