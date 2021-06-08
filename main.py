@@ -12,10 +12,10 @@ import os
 
 #files
 control_file = "./control.json"
-error_file = "./error.json"
+error_file = "./error.json",
+heartbeat_esp_file = "./heartbeat_esp.txt"
 
 #global vals
-ESP_online = False
 control_data = json.loads(open(control_file).read())
 
 #sqlite database values
@@ -138,8 +138,8 @@ def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
 @app.get("/control/esp")
 def get_control_data_ESP(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        global ESP_online
-        ESP_online = True
+        with open(heartbeat_esp_file, "w") as wd:
+            wd.write("1")
         return get_control()
     return safe(credentials = credentials, function = callback)
 
@@ -205,16 +205,22 @@ def heartbeat_api(credentials: HTTPBasicCredentials = Depends(security)):
 @app.get("/heartbeat/esp")
 def heartbeat_esp(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        return {"heartbeat": ESP_online}
+        with open(heartbeat_esp_file, "r") as rd:
+            status = int(rd.read())
+            if status:
+                status = True
+            else:
+                status = False
+        return {"heartbeat": status}
     return safe(credentials = credentials, function = callback, direct = True)
 
 #PUT for setting heartbeat of ESP to False
 @app.put("/heartbeat/esp/false")
 def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        global ESP_online
-        ESP_online = False
-        return {"heartbeat": ESP_online}
+        with open(heartbeat_esp_file, "w") as wd:
+            wd.write("0")
+        return {"heartbeat": False}
     return safe(credentials = credentials, function = callback)
 
 #for debugging
