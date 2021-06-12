@@ -12,7 +12,7 @@ import os
 
 #files
 control_file = "./control.json"
-error_file = "./error.json",
+error_file = "./error.json"
 heartbeat_esp_file = "./heartbeat_esp.txt"
 
 #global vals
@@ -101,6 +101,7 @@ def safe(credentials, function, args = [], direct = False):
 @app.post("/sql")
 def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(commands):
+        print(commands)
         callbacks = dict()
         with open(control_file, "r") as rd:
             callbacks["control"] = json.loads(rd.read())
