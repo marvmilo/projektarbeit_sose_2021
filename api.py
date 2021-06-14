@@ -3,6 +3,7 @@ import requests
 import re
 
 #api values
+#api_url = "http://localhost:8000"
 api_url = "https://api-projektarbeit-sose-2021.herokuapp.com"
 headers = {
     'accept': 'application/json',
@@ -72,6 +73,17 @@ def get_measurement(id):
 #for getting control json
 def get_control():
     return communicate(requests.get, "/control")["details"]
+
+#for updating control json
+def update_control(payload):
+    print(communicate(requests.put, "/control", json.dumps(payload)))
+
+#for getting control json
+def get_error():
+    return communicate(requests.get, "/error")["details"]
+
+def reset_error():
+    print(communicate(requests.put, "/error", json.dumps({"type": "none", "message": "none"})))
         
 #for getting table names
 def get_measurements():
@@ -89,10 +101,28 @@ def get_measurements():
     return callback
 
 #for checking if API is reachable
-def heartbeat():
+def heartbeat_api():
     try:
-        resp = communicate(requests.get, "/heartbeat")
+        resp = communicate(requests.get, "/heartbeat/api")
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+#for checking if API is reachable
+def heartbeat_esp():
+    resp = communicate(requests.get, "/heartbeat/esp")
+    return resp["heartbeat"]
+    
+#for setting heartbeat of ESP to false
+def set_heartbeat_esp_false():
+    try:
+        resp = communicate(requests.put, "/heartbeat/esp/false")
         return True
     except:
         return False
+
+#for starting measurement
+def start_measurement(name):
+    print(communicate(requests.post, f"/measurement_start?name={name}"))
     

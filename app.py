@@ -180,7 +180,34 @@ app.layout = html.Div(
         ),
         
         #replacement inputs if some are not aviable
-        tools.replacments_ids()
+        html.Div(
+            children = [
+                dbc.Button(id = "rename-button"),
+                dbc.Button(id = "delete-button"),
+                dbc.Button(id = "delete-yes"),
+                dbc.Button(id = "delete-no"),
+                dbc.Button(id = "delete-close"),
+                dbc.Button(id = "close-results-button"),
+                dbc.Button(id = "start-measurement-button"),
+                dbc.Button(id = "change-settings-button"),
+                dbc.Button(id = "retry-measurement-button"),
+                dbc.Button(id = "close-settings-changed-button"),
+                dbc.Input(id = "measurement-name-input"),
+                dbc.Modal(id = "delete-modal"),
+                dbc.Modal(id = "heartbeat-esp-modal"),
+                dbc.Modal(id = "esp-reachable-modal"),
+                dbc.Modal(id = "settings-changed-modal"),
+                html.Div(id = "delete-modal-content"),
+                html.Div(id = "details-name"),
+                dcc.Interval(id = "heartbeat-esp-interval", max_intervals = 0),
+                dbc.Input(id = "interval"),
+                dbc.Input(id = "tolerance_lat_acc"),
+                dbc.Input(id = "stable_amount"),
+                dbc.Input(id = "data_package_size"),
+                dbc.Input(id = "standby_refresh")
+            ],
+            style = {"display": "none"}
+        )
     ]
 )
 
@@ -201,16 +228,24 @@ def toggle_navbar_collapse(n_clicks, is_open):
      Output("measurements-navbutton", "n_clicks"),
      Output("details-navbutton", "n_clicks"),
      Output("control-navbutton", "n_clicks"),
+     Output("close-results-button", "n_clicks"),
+     Output("retry-measurement-button", "n_clicks"),
      Output("update-content-div", "children")],
     [Input("url", "pathname"),
      Input("measurements-navbutton", "n_clicks"),
      Input("details-navbutton", "n_clicks"),
-     Input("control-navbutton", "n_clicks")]
+     Input("control-navbutton", "n_clicks"),
+     Input("heartbeat-esp-interval", "n_intervals"),
+     Input("close-results-button", "n_clicks"),
+     Input("retry-measurement-button", "n_clicks")],
+    [State("measurement-name-input", "value"),
+     State("heartbeat-esp-modal", "is_open"),
+     State("esp-reachable-modal", "is_open")]
 )
-def navbar_callback(url, n_measurements, n_details, n_control):
+def navbar_callback(url, n_measurements, n_details, n_control, n_heartbeat_checks, n_close_results, n_retry_measurement, measurement_name, checking_esp, not_reachable):
     #creating return list for all Output values
     def return_list(url = "/"):
-        return [url, 0, 0, 0, tools.content_div()]
+        return [url, 0, 0, 0, 0, 0, tools.content_div()]
     
     #for getting details id
     def details_url():
@@ -248,10 +283,17 @@ def navbar_callback(url, n_measurements, n_details, n_control):
     elif n_control:
         url = "/control"
     
+    #if heartbeat of esp start measurement
+    if checking_esp or not_reachable:
+        if api.heartbeat_esp():
+            api.reset_error()
+            api.start_measurement(measurement_name)
+            pass
+        else:
+            raise PreventUpdate
+    
     #return url
     return return_list(url = url)
-    
-    raise PreventUpdate
 
 #callback for site content
 @app.callback(
@@ -272,7 +314,7 @@ def update_content(url):
         return [content, measurements_nav, details_nav, control_nav]
     
     #return API Error is not reachable
-    if not api.heartbeat():
+    if not api.heartbeat_api():
         return return_list(content = tools.error_page("API not reachable!"))
     
     #restart server if no authorisation initialized
@@ -372,6 +414,134 @@ def delete_measurement(n_yes, is_open, url):
             api.execute_sql(f"DELETE FROM measurements WHERE id = {id}")
             api.execute_sql(f"DROP TABLE measurement_{id}")
             return [not is_open]
+    raise PreventUpdate
+
+#starting checks if ESP is reachable
+@app.callback(
+    [Output("heartbeat-esp-modal", "is_open"),
+     Output("start-measurement-button", "n_clicks"),
+     Output("heartbeat-esp-interval", "n_intervals")],
+    [Input("start-measurement-button", "n_clicks"),
+     Input("heartbeat-esp-interval", "n_intervals")],
+    [State("measurement-name-input", "value")]
+)
+def check_if_esp_reachable(n_start, n_check, name):
+    if not n_check:
+        n_check = 0
+    
+    #events
+    if n_start:
+        if name == "" or not name:
+            raise PreventUpdate
+        else:
+            api.set_heartbeat_esp_false()
+            return [True, 0, None]
+    if n_check:
+        if (api.heartbeat_esp() and n_check >= 2) or n_check >= 10:
+            return [False, 0, None]
+    raise PreventUpdate
+
+@app.callback(
+    [Output("measurement-name-input", "invalid")],
+    [Input("start-measurement-button", "n_clicks")],
+    [State("measurement-name-input", "value")]
+)
+def check_measurement_name(n_start, name):
+    if name == "" or not name:
+        return [True]
+    else:
+        return [False]
+
+#opening modal if ESP is nor reachable
+@app.callback(
+    [Output("esp-reachable-modal", "is_open"),
+     Output("close-esp-reachable", "n_clicks")],
+    [Input("heartbeat-esp-interval", "n_intervals"),
+     Input("close-esp-reachable", "n_clicks")]
+)
+def show_esp_not_reachable_modal(n_checks, n_close):
+    if not n_checks:
+        n_checks = 0
+    n_checks += 1
+    
+    if n_checks >= 10:
+        return [True, 0]
+    if n_close:
+        return [False, 0]
+    raise PreventUpdate
+
+#checking measurement
+@app.callback(
+    [Output("measurement-results-modal", "is_open"),
+     Output("retry-measurement-modal", "is_open"),
+     Output("view-results-href", "href")],
+    [Input("measuring-interval", "n_intervals")]
+)
+def check_measurement(n_intervals):
+    control = api.get_control()
+    error = api.get_error()
+    
+    if not error["type"] == "none":
+        return [False, True, "/"]
+        
+    if not control["measurement"]:
+        return [True, False, f"/details/{int(control['table_name'].split('_')[1])}"]
+    raise PreventUpdate
+
+#update settings per API
+@app.callback(
+    [Output("settings-changed-modal", "is_open"),
+     Output("interval", "invalid"),
+     Output("tolerance_lat_acc", "invalid"),
+     Output("stable_amount", "invalid"),
+     Output("data_package_size", "invalid"),
+     Output("standby_refresh", "invalid"),
+     Output("change-settings-button", "n_clicks"),
+     Output("close-settings-changed-button", "n_clicks")],
+    [Input("change-settings-button", "n_clicks"),
+     Input("close-settings-changed-button", "n_clicks")],
+    [State("interval", "value"),
+     State("tolerance_lat_acc", "value"),
+     State("stable_amount", "value"),
+     State("data_package_size", "value"),
+     State("standby_refresh", "value")]
+)
+def update_settings(n_change, n_close,  interval, tolerance_lat_acc, stable_amount, data_package_size, standby_refresh):
+    #return function
+    def return_list(
+        modal_is_open = False,
+        interval = False,
+        tolerance_lat_acc = False,
+        stable_amount = False,
+        data_package_size = False,
+        standby_refresh = False
+    ):
+        return [modal_is_open, interval, tolerance_lat_acc, stable_amount, data_package_size, standby_refresh, 0, 0]
+    
+    invalids = []
+    for val in [interval, tolerance_lat_acc, stable_amount, data_package_size, standby_refresh]:
+        try:
+            float(val)
+            invalids.append(False)
+        except:
+            invalids.append(True)
+    
+    if n_close:
+        return return_list(modal_is_open = False)
+    
+    if any(invalids):
+        return return_list(False, *invalids)    
+    
+    if n_change and not any(invalids):
+        control_json = api.get_control()
+        control_json["interval"] = interval
+        control_json["tolerance_lat_acc"] = tolerance_lat_acc
+        control_json["stable_amount"] = stable_amount
+        control_json["data_package_size"] = data_package_size
+        control_json["standby_refresh"] = standby_refresh
+        api.update_control(control_json)
+        return return_list(modal_is_open = True)
+    
     raise PreventUpdate
 
 if __name__ == '__main__':

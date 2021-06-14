@@ -1,4 +1,5 @@
 import dash_bootstrap_components as dbc
+import dash_core_components as dcc
 import dash_html_components as html
 import datetime
 
@@ -124,6 +125,23 @@ def content():
     #return content
     return html.Div(
         children = [
+            #replacements IDs
+            html.Div(
+                children = [
+                    dbc.Button(id = "start-measurement-button"),
+                    dbc.Button(id = "change-settings-button"),
+                    dbc.Button(id = "rename-button"),
+                    dbc.Button(id = "delete-button"),
+                    dbc.Button(id = "close-results-button"),
+                    dbc.Input(id = "measurement-name-input"),
+                    dcc.Interval(id = "heartbeat-esp-interval", max_intervals = 0),
+                    dbc.Modal(id = "heartbeat-esp-modal"),
+                    dbc.Modal(id = "esp-reachable-modal")
+                ],
+                style = {"display": "none"}
+            ),
+            
+            #page content
             tools.page_title("Measurements"),
             html.Br(),
             html.Div(
@@ -148,7 +166,7 @@ def content():
                 ),
                 style = {
                     "overflow": "auto",
-                    "height": "600px"
+                    "height": "65vh"
                 }
             )
         ]

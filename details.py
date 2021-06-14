@@ -309,24 +309,27 @@ def content(id):
             pass
         
         #calculate polar cordinates
-        range_i = range(len(accx))
-        r = [math.sqrt(accx[i]**2 + accy[i]**2) for i in range_i]
-        theta = [math.atan(accy[i] / accx[i]) for i in range_i]
-        
-        #create figure
-        fig.add_trace(
-            go.Scatterpolar(
-                r = r,
-                theta = theta,
-                thetaunit = "radians",
-                mode="markers",
-                name = "<b>Acceleration</b> in m/s²",
-                marker = dict(
-                    size=7.5, 
-                    color = "#007BFF"
+        try:
+            range_i = range(len(accx))
+            r = [math.sqrt(accx[i]**2 + accy[i]**2) for i in range_i]
+            theta = [math.atan(accy[i] / accx[i]) for i in range_i]
+            
+            #create figure
+            fig.add_trace(
+                go.Scatterpolar(
+                    r = r,
+                    theta = theta,
+                    thetaunit = "radians",
+                    mode="markers",
+                    name = "<b>Acceleration</b> in m/s²",
+                    marker = dict(
+                        size=7.5, 
+                        color = "#007BFF"
+                    )
                 )
             )
-        )
+        except ZeroDivisionError:
+            pass
         
         #update ticks
         fig.update_polars(
@@ -445,6 +448,19 @@ def content(id):
     #content div
     return html.Div(
         children = [
+            #replacements IDs
+            html.Div(
+                children = [
+                    dbc.Button(id = "start-measurement-button"),
+                    dbc.Button(id = "change-settings-button"),
+                    dbc.Input(id = "measurement-name-input"),
+                    dcc.Interval(id = "heartbeat-esp-interval", max_intervals = 0),
+                    dbc.Modal(id = "heartbeat-esp-modal"),
+                    dbc.Modal(id = "esp-reachable-modal")
+                ],
+                style = {"display": "none"}
+            ),
+            
             #page title
             dbc.Row(
                 children = [

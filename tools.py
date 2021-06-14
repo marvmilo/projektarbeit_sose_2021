@@ -25,7 +25,10 @@ def get_user():
 
 #for getting user data
 def get_user_data(user = None):
-    user_data = api.get_table("user_data")
+    for i in range(10):
+        user_data = api.get_table("user_data")
+        if user_data:
+            break
     
     user_data = {
         u[0]: {
@@ -147,24 +150,6 @@ def graph_title(title):
             "color": "black" 
         }
     }
-
-#replacement inputs if some are not aviable
-def replacments_ids():
-    return html.Div(
-        children = [
-            dbc.Button(id = "rename-button"),
-            dbc.Button(id = "delete-button"),
-            dbc.Button(id = "delete-yes"),
-            dbc.Button(id = "delete-no"),
-            dbc.Button(id = "delete-close"),
-            dbc.Button(id = "start-measurement-button"),
-            dbc.Button(id = "change-settings-button"),
-            dbc.Modal(id = "delete-modal"),
-            html.Div(id = "delete-modal-content"),
-            html.Div(id = "details-name")
-        ],
-        style = {"display": "none"}
-    )
 
 #for creating a modal header
 def modal_header(title):
