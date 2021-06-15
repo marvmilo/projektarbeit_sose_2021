@@ -76,14 +76,14 @@ def get_control():
 
 #for updating control json
 def update_control(payload):
-    print(communicate(requests.put, "/control", json.dumps(payload)))
+    communicate(requests.put, "/control", json.dumps(payload))
 
 #for getting control json
 def get_error():
     return communicate(requests.get, "/error")["details"]
 
 def reset_error():
-    print(communicate(requests.put, "/error", json.dumps({"type": "none", "message": "none"})))
+    communicate(requests.put, "/error", json.dumps({"type": "none", "message": "none"}))
         
 #for getting table names
 def get_measurements():
@@ -124,5 +124,5 @@ def set_heartbeat_esp_false():
 
 #for starting measurement
 def start_measurement(name):
-    print(communicate(requests.post, f"/measurement_start?name={name}"))
+    communicate(requests.post, f"/measurement_start?name={name}")
     
