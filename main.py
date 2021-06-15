@@ -192,6 +192,11 @@ def upload_error_json(error: Error, credentials: HTTPBasicCredentials = Depends(
     def callback(error):
         with open(error_file, "w") as wd:
             wd.write(error.json())
+        with open(control_file, "r") as rd:
+            control = json.loads(rd.read())
+        control["measurement"] = False
+        with open(control_file, "w") as wd:
+            wd.write(json.dumps(control))
         return error.dict()
     return safe(credentials = credentials, function = callback, args = [error])
 
