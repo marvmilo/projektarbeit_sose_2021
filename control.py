@@ -313,6 +313,19 @@ def content():
                                 ),
                                 style = tools.flex_style
                             ),
+                            dbc.Row(
+                                children = [
+                                    dbc.Col(
+                                        html.B("ERROR TYPE:"),
+                                        width = "auto"
+                                    ),
+                                    dbc.Col(
+                                        "content",
+                                        id = "error-type-content",
+                                        width = "auto"
+                                    )
+                                ]
+                            ),
                             html.Br(),
                             html.Div(
                                 dbc.Button(
@@ -327,7 +340,8 @@ def content():
                 ],
                 centered = True,
                 backdrop = "static",
-                id = "retry-measurement-modal"
+                id = "retry-measurement-modal",
+                #is_open = True
             ),
             
             #change settings Modal

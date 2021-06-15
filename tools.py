@@ -137,9 +137,12 @@ def pp_timestamp(timestamp):
 
 #for pretty printing duration
 def pp_duration(duration):
-    duration_list = duration.split(" ")
-    duration_list[-2] = duration_list[-2][:3]
-    return " ".join(duration_list)
+    try:
+        duration_list = duration.split(" ")
+        duration_list[-2] = duration_list[-2][:3]
+        return " ".join(duration_list)
+    except IndexError:
+        return "-"
 
 #for creating graph title
 def graph_title(title):
