@@ -313,18 +313,34 @@ def content():
                                 ),
                                 style = tools.flex_style
                             ),
+                            html.Br(),
                             dbc.Row(
                                 children = [
                                     dbc.Col(
-                                        html.B("ERROR TYPE:"),
+                                        html.B("ERROR TYPE: "),
                                         width = "auto"
                                     ),
                                     dbc.Col(
-                                        "content",
-                                        id = "error-type-content",
+                                        html.Div(
+                                            "Luke stinkt",
+                                            id = "error-type-content"
+                                        ),
                                         width = "auto"
                                     )
                                 ]
+                            ),
+                            html.Br(),
+                            html.B("DETAILS:"),
+                            dbc.Card(
+                                html.Div(
+                                    "content",
+                                    id = "error-details-content"
+                                ),
+                                body = True,
+                                style = {
+                                  "height": "200px",
+                                  "overflow": "auto"
+                                } 
                             ),
                             html.Br(),
                             html.Div(

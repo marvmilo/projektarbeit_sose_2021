@@ -474,7 +474,9 @@ def show_esp_not_reachable_modal(n_checks, n_close):
 @app.callback(
     [Output("measurement-results-modal", "is_open"),
      Output("retry-measurement-modal", "is_open"),
-     Output("view-results-href", "href")],
+     Output("view-results-href", "href"),
+     Output("error-type-content", "children"),
+     Output("error-details-content", "children")],
     [Input("measuring-interval", "n_intervals")]
 )
 def check_measurement(n_intervals):
@@ -482,10 +484,10 @@ def check_measurement(n_intervals):
     error = api.get_error()
     
     if not error["type"] == "none":
-        return [False, True, "/"]
+        return [False, True, "/", error["type"], error["message"]]
         
     if not control["measurement"]:
-        return [True, False, f"/details/{int(control['table_name'].split('_')[1])}"]
+        return [True, False, f"/details/{int(control['table_name'].split('_')[1])}", "", ""]
     raise PreventUpdate
 
 #update settings per API
