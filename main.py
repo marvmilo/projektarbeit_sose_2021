@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import traceback
 import uvicorn
 import json
-#import sqlite3
+import datetime as dt
 import psycopg2
 import base64
 import os
@@ -17,6 +17,8 @@ heartbeat_esp_file = "./heartbeat_esp.txt"
 
 #global vals
 control_data = json.loads(open(control_file).read())
+measurement_timeout_minutes = 5
+measurement_start_time = None
 
 #sqlite database values
 try:
@@ -72,8 +74,33 @@ def get_control():
     with open(control_file, "r") as rd:
         return json.loads(rd.read())
 
+#for stopping measurement
+def measurement_stop():
+    control = json.loads(open(control_file, "r").read())
+    control["measurement"] = False
+    open(control_file, "w").write(json.dumps(control, indent = 4))
+    return control
+    
+
 #function for executing other function only if the right credentials are given by API user
 def safe(credentials, function, args = [], direct = False):
+    global measurement_start_time
+    
+    #check for measurement timeout
+    if measurement_start_time:
+        if (dt.datetime.now() - measurement_start_time) > dt.timedelta(minutes = measurement_timeout_minutes):
+            measurement_stop()
+            measurement_start_time = None
+            with open(error_file, "w") as wd:
+                wd.write(
+                    json.dumps(
+                        {
+                            "type": "Timeout",
+                            "message": "Measurement timed out. (No answer from ESP)"
+                        }
+                    )
+                )
+    
     #check for credentials
     if credentials.username == "user" and credentials.password == "projekt123":
         #return cases
@@ -148,6 +175,7 @@ def get_control_data_ESP(credentials: HTTPBasicCredentials = Depends(security)):
 @app.post("/measurement_start")
 def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(name):
+        global measurement_start_time
         #create table name
         readout = execute_sql("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'")
         measurements = [m[0] for m in readout if m[0].startswith("measurement_")]
@@ -165,6 +193,7 @@ def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(sec
         control["name"] = name
         control["table_name"] = table_name
         open(control_file, "w").write(json.dumps(control, indent = 4))
+        measurement_start_time = dt.datetime.now()
         return control
     return safe(credentials = credentials, function = callback, args = [name])
 
@@ -172,10 +201,7 @@ def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(sec
 @app.post("/measurement_stop")
 def stop_measurement(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        control = json.loads(open(control_file, "r").read())
-        control["measurement"] = False
-        open(control_file, "w").write(json.dumps(control, indent = 4))
-        return control
+        return measurement_stop()
     return safe(credentials = credentials, function = callback)
 
 #GET for downloading control json
