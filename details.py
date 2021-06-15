@@ -86,6 +86,7 @@ def content(id):
     #building graph data
     accuracy = 2
     time_data = []
+    data["data"].sort(key = lambda d: d[0])
     for d in data["data"]:
         time_delta = tools.load_datetime(d[1]) - tools.load_datetime(data["data"][0][1])
         seconds = round(tools.timedelta_to_seconds(time_delta), accuracy)
@@ -175,6 +176,7 @@ def content(id):
         voltage_color = "#004B9B"
         weight_color = "#007BFF"
         #calculate data
+        data["data"].sort(key = lambda d: d[0])
         voltage_data = [round(d[-1], accuracy) for d in data["data"]]
         weight_data = [round(calculate_weight(v), accuracy) for v in voltage_data]
         

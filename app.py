@@ -430,7 +430,7 @@ def check_if_esp_reachable(n_start, n_check, name):
         n_check = 0
     
     #events
-    if n_start:
+    if n_start and tools.get_user_data(tools.get_user())["role"] == "admin":
         if name == "" or not name:
             raise PreventUpdate
         else:
@@ -531,19 +531,20 @@ def update_settings(n_change, n_close,  interval, tolerance_lat_acc, stable_amou
     if n_close:
         return return_list(modal_is_open = False)
     
-    if any(invalids):
-        return return_list(False, *invalids)    
-    
-    if n_change and not any(invalids):
-        control_json = api.get_control()
-        control_json["interval"] = interval
-        control_json["tolerance_lat_acc"] = tolerance_lat_acc
-        control_json["stable_amount"] = stable_amount
-        control_json["data_package_size"] = data_package_size
-        control_json["standby_refresh"] = standby_refresh
-        api.update_control(control_json)
-        return return_list(modal_is_open = True)
-    
+    if tools.get_user_data(tools.get_user())["role"] == "admin":
+        if any(invalids):
+            return return_list(False, *invalids)    
+        
+        if n_change and not any(invalids):
+            control_json = api.get_control()
+            control_json["interval"] = interval
+            control_json["tolerance_lat_acc"] = tolerance_lat_acc
+            control_json["stable_amount"] = stable_amount
+            control_json["data_package_size"] = data_package_size
+            control_json["standby_refresh"] = standby_refresh
+            api.update_control(control_json)
+            return return_list(modal_is_open = True)
+        
     raise PreventUpdate
 
 if __name__ == '__main__':
