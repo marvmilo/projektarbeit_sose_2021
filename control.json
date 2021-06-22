@@ -1,1 +1,1 @@
-{"measurement": false, "name": "test measurement timeout", "table_name": "measurement_195", "data_package_size": 10, "standby_refresh": 0.5, "interval": 0.2, "stable_amount": 10, "tolerance_lat_acc": 0.1}
+{"measurement": false, "name": "test measurement timeout", "table_name": "measurement_195", "data_package_size": 10, "standby_refresh": 0.5, "interval": 0.2, "stable_amount": 10, "tolerance_lat_acc": 0.15}
