@@ -14,7 +14,9 @@ import tools
 
 #for calculating weight
 def calculate_weight(voltage):
-    return voltage**4
+    weight = 10.017/(1.543-0.555) * (voltage-0.555)
+    #weight = (voltage - 0.5525) * 87.37128802
+    return weight
 
 #for creating info card
 def info_card(header, value):
@@ -96,7 +98,7 @@ def content(id):
     def calculate_final_weight():
         stable_vals = [d[-1] for d in data["data"][-data["info"]["stable_amount"]:]]
         avg = sum(stable_vals) / len(stable_vals)
-        return float(round(calculate_weight(avg), accuracy))
+        return float(calculate_weight(avg))
     
     #calculate final weight
     if data["info"]["success"]:
@@ -545,6 +547,25 @@ def content(id):
             
             #voltage/weight graph
             dcc.Graph(figure = build_voltage_weight(data)),
+            
+            #acceleration graphs
+            dbc.Row(
+                children = [
+                    dbc.Col(
+                        "x-acceleration",
+                        width = "auto"
+                    ),
+                    dbc.Col(
+                        "y-acceleration",
+                        width = "auto"
+                    ),
+                    dbc.Col(
+                        "z-acceleration",
+                        width = "auto"
+                    )
+                ],
+                justify = "center"
+            ),
             
             #acceleration and edit row
             dbc.Row(
