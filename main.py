@@ -13,6 +13,7 @@ import os
 #files
 control_file = "./control.json"
 error_file = "./error.json"
+values_file = "./values.json"
 heartbeat_esp_file = "./heartbeat_esp.txt"
 
 #global vals
@@ -71,26 +72,46 @@ def execute_sql(command):
 
 #function for getting control file
 def get_control():
-    with open(control_file, "r") as rd:
+    with open(control_file) as rd:
         return json.loads(rd.read())
+
+#for loading current start time 
+def get_measurement_start():
+    with open(values_file) as rd:
+        try:
+            return dt.datetime.fromtimestamp(json.loads(rd.read())["measurement-start-time"])
+        except TypeError:
+            return None
+
+#for updating current start time
+def update_measurement_start(time):
+    with open(values_file) as rd:
+        jc = json.loads(rd.read())
+    if time:
+        jc["measurement-start-time"] = dt.datetime.timestamp(time)
+    else:
+        jc["measurement-start-time"] = None
+    with open(values_file, "w") as wd:
+        wd.write(json.dumps(jc, indent = 4))
 
 #for stopping measurement
 def measurement_stop():
     control = json.loads(open(control_file, "r").read())
     control["measurement"] = False
+    update_measurement_start(None)
     open(control_file, "w").write(json.dumps(control, indent = 4))
     return control
-    
 
 #function for executing other function only if the right credentials are given by API user
 def safe(credentials, function, args = [], direct = False):
-    global measurement_start_time
+    
+    measurement_start_time = get_measurement_start()
     
     #check for measurement timeout
     if measurement_start_time:
         if (dt.datetime.now() - measurement_start_time) > dt.timedelta(minutes = measurement_timeout_minutes):
             measurement_stop()
-            measurement_start_time = None
+            update_measurement_start(None)
             with open(error_file, "w") as wd:
                 wd.write(
                     json.dumps(
@@ -128,7 +149,6 @@ def safe(credentials, function, args = [], direct = False):
 @app.post("/sql")
 def execute_sql_command(commands: list, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(commands):
-        print(commands)
         callbacks = dict()
         with open(control_file, "r") as rd:
             callbacks["control"] = json.loads(rd.read())
@@ -160,22 +180,32 @@ def update_control_data(control: Control, credentials: HTTPBasicCredentials = De
 def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
         return get_control()
-    return safe(credentials = credentials, function = callback)
+    return safe(credentials = credentials, function = callback)#
 
-#GET for downloading control json and updating heartbeat of esp
-@app.get("/control/esp")
-def get_control_data_ESP(credentials: HTTPBasicCredentials = Depends(security)):
-    def callback():
-        with open(heartbeat_esp_file, "w") as wd:
-            wd.write("1")
+#POST for getting control json and updating heartbeat of esp
+@app.post("/control/calibration")
+def get_control_data_ESP(calibration: float, credentials: HTTPBasicCredentials = Depends(security)):
+    def callback(calibration):
+        json_content = json.loads(open(values_file, "r").read())
+        json_content["calibration"] = calibration
+        json_content["heartbeat-esp"] = True
+        with open(values_file, "w") as wd:
+            wd.write(json.dumps(json_content, indent = 4))
         return get_control()
+    return safe(credentials = credentials, function = callback, args = [calibration])
+
+#GET for getting current calibration
+@app.get("/calibration")
+def get_current_calibration(credentials: HTTPBasicCredentials = Depends(security)):
+    def callback():
+        with open(values_file) as rd:
+            return json.loads(rd.read())["calibration"]
     return safe(credentials = credentials, function = callback)
 
 #POST function for starting measurement with saved control json
 @app.post("/measurement_start")
 def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(security)):
     def callback(name):
-        global measurement_start_time
         #create table name
         readout = execute_sql("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public'")
         measurements = [m[0] for m in readout if m[0].startswith("measurement_")]
@@ -193,7 +223,7 @@ def start_measurement(name: str, credentials: HTTPBasicCredentials = Depends(sec
         control["name"] = name
         control["table_name"] = table_name
         open(control_file, "w").write(json.dumps(control, indent = 4))
-        measurement_start_time = dt.datetime.now()
+        update_measurement_start(dt.datetime.now())
         return control
     return safe(credentials = credentials, function = callback, args = [name])
 
@@ -237,12 +267,8 @@ def heartbeat_api(credentials: HTTPBasicCredentials = Depends(security)):
 @app.get("/heartbeat/esp")
 def heartbeat_esp(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        with open(heartbeat_esp_file, "r") as rd:
-            status = int(rd.read())
-            if status:
-                status = True
-            else:
-                status = False
+        with open(values_file) as rd:
+            status = json.loads(rd.read())["heartbeat-esp"]
         return {"heartbeat": status}
     return safe(credentials = credentials, function = callback, direct = True)
 
@@ -250,8 +276,11 @@ def heartbeat_esp(credentials: HTTPBasicCredentials = Depends(security)):
 @app.put("/heartbeat/esp/false")
 def set_heartbeat_esp_to_false(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        with open(heartbeat_esp_file, "w") as wd:
-            wd.write("0")
+        with open(values_file) as rd:
+            jc = json.loads(rd.read())
+        jc["heartbeat-esp"] = False
+        with open(values_file, "w") as wd:
+            wd.write(json.dumps(jc, indent = 4))
         return {"heartbeat": False}
     return safe(credentials = credentials, function = callback)
 
