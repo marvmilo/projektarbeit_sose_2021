@@ -8,7 +8,7 @@ import api
 import tools
 
 #start measurement buttons
-def start_measurement_button():
+def start_measurement():
     return html.Div(
         children = [
             html.Div(
@@ -30,16 +30,37 @@ def start_measurement_button():
                 ),
                 style = tools.flex_style
             ),
-            html.Div(
+            
+            dbc.Row(
                 children = [
-                    dbc.Button(
-                        "START",
-                        id = "start-measurement-button",
-                        size  = "lg",
-                        color = "primary"
+                    dbc.Col(
+                        html.Div(
+                            dbc.Button(
+                                "START",
+                                id = "start-measurement-button",
+                                size  = "lg",
+                                color = "primary",
+                                block = True
+                            ),
+                            style = {"width": "150px"}
+                        ),
+                        width = "auto"
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            dbc.Button(
+                                "CALIBRATE",
+                                id = "calibrate-button",
+                                size  = "lg",
+                                color = "primary",
+                                block = True
+                            ),
+                            style = {"width": "150px"}
+                        ),
+                        width = "auto"
                     )
                 ],
-                style = tools.flex_style
+                justify = "center"
             )
         ]    
     )
@@ -78,7 +99,8 @@ def measurement_running():
             html.Div(
                 children = [
                     dbc.Button(id = "start-measurement-button"),
-                    dbc.Input(id = "measurement-name-input"),
+                    dbc.Button(id = "calibrate-button"),
+                    dbc.Input(id = "measurement-name-input")
                 ],
                 style = {"display": "none"}
             ),
@@ -93,7 +115,7 @@ def content():
     if settings["measurement"]:
         measuring_content = measurement_running(),
     else:
-        measuring_content = start_measurement_button()
+        measuring_content = start_measurement()
     
     #create a table row for settings
     def settings_table_row(name, value, unit , id,  integer = False):
@@ -200,7 +222,7 @@ def content():
                             html.Br(),
                             dcc.Interval(
                                 id = "heartbeat-esp-interval",
-                                interval = 1*1000
+                                interval = 1.5*1000
                             )
                         ]
                     )
@@ -386,6 +408,63 @@ def content():
                 centered = True,
                 keyboard = True,
                 id = "settings-changed-modal"
+            ),
+            
+            #modal for checking heartbeat of ESP
+            dbc.Modal(
+                children = [
+                    tools.modal_header("Calibrate ESP"),
+                    dbc.ModalBody(
+                        children = [
+                            html.Div(
+                                "Connecting to ESP ...",
+                                style = tools.flex_style
+                            ),
+                            html.Br(),
+                            html.Div(
+                                dbc.Spinner(),
+                                style = tools.flex_style
+                            ),
+                            html.Br(),
+                            dcc.Interval(
+                                id = "calibrate-interval",
+                                interval = 1.5*1000
+                            )
+                        ]
+                    )
+                ],
+                centered = True,
+                backdrop = "static",
+                id = "calibrate-modal"
+            ),
+            
+            #calibration modal
+            dbc.Modal(
+                children = [
+                    tools.modal_header("Calibrate ESP"),
+                    dbc.ModalBody(
+                        children = [
+                            html.Br(),
+                            html.Div(
+                                "Calibration Done!",
+                                style = tools.flex_style
+                            ),
+                            html.Br(),html.Br(),
+                            html.Div(
+                                dbc.Button(
+                                    "Ok",
+                                    color = "primary",
+                                    id = "calibration-ok-button",
+                                    style = {"width": "150px"}
+                                ),
+                                style = tools.flex_style
+                            )
+                        ]
+                    )
+                ],
+                centered = True,
+                backdrop = "static",
+                id = "calibration-done-modal"
             )
         ]
     )

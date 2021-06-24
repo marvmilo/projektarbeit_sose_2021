@@ -16,6 +16,7 @@ import tools
 def calculate_weight(voltage):
     weight = 10.017/(1.543-0.555) * (voltage-0.555)
     #weight = (voltage - 0.5525) * 87.37128802
+    return round(weight, 2)
     return weight
 
 #for creating info card
@@ -460,6 +461,7 @@ def content(id):
                     dbc.Button(id = "close-results-button"),
                     dbc.Button(id = "close-settings-changed-button"),
                     dbc.Button(id = "retry-measurement-button"),
+                    dbc.Button(id = "calibrate-button"),
                     dbc.Input(id = "measurement-name-input"),
                     dbc.Input(id = "interval"),
                     dbc.Input(id = "tolerance_lat_acc"),
@@ -467,9 +469,11 @@ def content(id):
                     dbc.Input(id = "data_package_size"),
                     dbc.Input(id = "standby_refresh"),
                     dcc.Interval(id = "heartbeat-esp-interval", max_intervals = 0),
+                    dcc.Interval(id = "calibrate-interval", max_intervals = 0),
                     dbc.Modal(id = "heartbeat-esp-modal"),
                     dbc.Modal(id = "esp-reachable-modal"),
-                    dbc.Modal(id = "settings-changed-modal")
+                    dbc.Modal(id = "settings-changed-modal"),
+                    dbc.Modal(id = "calibrate-modal")
                 ],
                 style = {"display": "none"}
             ),

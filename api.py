@@ -125,4 +125,8 @@ def set_heartbeat_esp_false():
 #for starting measurement
 def start_measurement(name):
     communicate(requests.post, f"/measurement_start?name={name}")
+
+#for starting calibration
+def start_calibration():
+    communicate(requests.post, f"/calibration_start")
     

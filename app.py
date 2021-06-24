@@ -192,14 +192,17 @@ app.layout = html.Div(
                 dbc.Button(id = "change-settings-button"),
                 dbc.Button(id = "retry-measurement-button"),
                 dbc.Button(id = "close-settings-changed-button"),
+                dbc.Button(id = "calibrate-button"),
                 dbc.Input(id = "measurement-name-input"),
                 dbc.Modal(id = "delete-modal"),
                 dbc.Modal(id = "heartbeat-esp-modal"),
                 dbc.Modal(id = "esp-reachable-modal"),
                 dbc.Modal(id = "settings-changed-modal"),
+                dbc.Modal(id = "calibrate-modal"),
                 html.Div(id = "delete-modal-content"),
                 html.Div(id = "details-name"),
                 dcc.Interval(id = "heartbeat-esp-interval", max_intervals = 0),
+                dcc.Interval(id = "calibrate-interval", max_intervals = 0),
                 dbc.Input(id = "interval"),
                 dbc.Input(id = "tolerance_lat_acc"),
                 dbc.Input(id = "stable_amount"),
@@ -351,14 +354,15 @@ def update_content(url):
      Input("rename-button", "n_clicks"),
      Input("delete-button", "n_clicks"),
      Input("start-measurement-button", "n_clicks"),
-     Input("change-settings-button", "n_clicks")],
+     Input("change-settings-button", "n_clicks"),
+     Input("calibrate-button", "n_clicks")],
     [State("not-authorized-modal", "is_open")]
 )
-def open_modal(n_close, n_rename, n_delete, n_start, n_settings, is_open):
+def open_modal(n_close, n_rename, n_delete, n_start, n_settings, n_calibrate, is_open):
     if is_open:
         return [False]
     if tools.get_user_data(tools.get_user())["role"] == "viewer":
-        for i in [n_rename, n_delete, n_start, n_settings]:
+        for i in [n_rename, n_delete, n_start, n_settings, n_calibrate]:
             if i:
                 return [True]
     raise PreventUpdate
@@ -457,14 +461,18 @@ def check_measurement_name(n_start, name):
     [Output("esp-reachable-modal", "is_open"),
      Output("close-esp-reachable", "n_clicks")],
     [Input("heartbeat-esp-interval", "n_intervals"),
+     Input("calibrate-interval", "n_intervals"),
      Input("close-esp-reachable", "n_clicks")]
 )
-def show_esp_not_reachable_modal(n_checks, n_close):
-    if not n_checks:
-        n_checks = 0
-    n_checks += 1
+def show_esp_not_reachable_modal(n_measurement, n_calibrate, n_close):
+    if not n_measurement:
+        n_measurement = 0
+    if not n_calibrate:
+        n_calibrate = 0
+    n_measurement += 1
+    n_calibrate += 1
     
-    if n_checks >= 10:
+    if n_measurement >= 10 or n_calibrate >= 10:
         return [True, 0]
     if n_close:
         return [False, 0]
@@ -547,5 +555,45 @@ def update_settings(n_change, n_close,  interval, tolerance_lat_acc, stable_amou
         
     raise PreventUpdate
 
+#open/close calibrating modal
+@app.callback(
+    [Output("calibrate-modal", "is_open"),
+     Output("calibrate-button", "n_clicks"),
+     Output("calibrate-interval", "n_intervals")],
+    [Input("calibrate-button", "n_clicks"),
+     Input("calibrate-interval", "n_intervals")]
+)
+def check_measurement_name(n_calibrate, n_check):
+    if not n_check:
+        n_check = 0
+    
+    #events
+    if n_calibrate and tools.get_user_data(tools.get_user())["role"] == "admin":
+        api.set_heartbeat_esp_false()
+        return [True, 0, None]
+    if n_check:
+        if (api.heartbeat_esp() and n_check >= 2) or n_check >= 10:
+            return [False, 0, None]
+    raise PreventUpdate
+
+@app.callback(
+    [Output("calibration-done-modal", "is_open"),
+     Output("calibration-ok-button", "n_clicks")],
+    [Input("calibration-ok-button", "n_clicks"),
+     Input("calibrate-interval", "n_intervals")]
+)
+def check_measurement_name(n_ok, n_interval):
+    if not n_interval:
+        n_interval = 0
+    n_interval += 1
+    
+    if n_ok:
+        return [False, 0]
+    if n_interval >= 2 and api.heartbeat_esp():
+        api.start_calibration()
+        return [True, 0]
+    raise PreventUpdate
+
+#calibration callback
 if __name__ == '__main__':
     app.run_server(debug=True, host = "0.0.0.0")
