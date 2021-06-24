@@ -206,7 +206,7 @@ def get_current_calibration(credentials: HTTPBasicCredentials = Depends(security
         jc["calibration"] = True
         with open(control_file, "w") as wd:
             wd.write(json.dumps(jc, indent = 4))
-        return True
+        return jc
     return safe(credentials = credentials, function = callback)
 
 #POST function for starting measurement with saved control json
