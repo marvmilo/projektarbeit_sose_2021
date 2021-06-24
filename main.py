@@ -183,23 +183,30 @@ def get_control_data(credentials: HTTPBasicCredentials = Depends(security)):
     return safe(credentials = credentials, function = callback)#
 
 #POST for getting control json and updating heartbeat of esp
-@app.post("/control/calibration")
-def get_control_data_ESP(calibration: float, credentials: HTTPBasicCredentials = Depends(security)):
-    def callback(calibration):
+@app.get("/control/esp")
+def get_control_data_ESP(credentials: HTTPBasicCredentials = Depends(security)):
+    def callback():
         json_content = json.loads(open(values_file, "r").read())
-        json_content["calibration"] = calibration
         json_content["heartbeat-esp"] = True
         with open(values_file, "w") as wd:
             wd.write(json.dumps(json_content, indent = 4))
-        return get_control()
-    return safe(credentials = credentials, function = callback, args = [calibration])
+        control = get_control()
+        rj = control.copy()
+        control["calibration"] = False
+        with open(control_file, "w") as wd:
+            wd.write(json.dumps(control, indent = 4))
+        return rj
+    return safe(credentials = credentials, function = callback)
 
 #GET for getting current calibration
-@app.get("/calibration")
+@app.post("/calibration_start")
 def get_current_calibration(credentials: HTTPBasicCredentials = Depends(security)):
     def callback():
-        with open(values_file) as rd:
-            return json.loads(rd.read())["calibration"]
+        jc = get_control()
+        jc["calibration"] = True
+        with open(control_file, "w") as wd:
+            wd.write(json.dumps(jc, indent = 4))
+        return True
     return safe(credentials = credentials, function = callback)
 
 #POST function for starting measurement with saved control json

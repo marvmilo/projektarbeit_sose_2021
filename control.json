@@ -1,5 +1,6 @@
 {
     "measurement": false,
+    "calibration": false,
     "name": "test api",
     "table_name": "measurement_323",
     "data_package_size": 10,
