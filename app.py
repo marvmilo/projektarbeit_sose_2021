@@ -317,7 +317,7 @@ def update_content(url):
         return [content, measurements_nav, details_nav, control_nav]
     
     #return API Error is not reachable
-    if not api.heartbeat_api():
+    if not api.heartbeat_api() or url == "/api_not_reachable":
         return return_list(content = tools.error_page("API not reachable!"))
     
     #restart server if no authorisation initialized
@@ -361,10 +361,14 @@ def update_content(url):
 def open_modal(n_close, n_rename, n_delete, n_start, n_settings, n_calibrate, is_open):
     if is_open:
         return [False]
-    if tools.get_user_data(tools.get_user())["role"] == "viewer":
-        for i in [n_rename, n_delete, n_start, n_settings, n_calibrate]:
-            if i:
-                return [True]
+    
+    try:
+        if tools.get_user_data(tools.get_user())["role"] == "viewer":
+            for i in [n_rename, n_delete, n_start, n_settings, n_calibrate]:
+                if i:
+                    return [True]
+    except TypeError:
+        raise PreventUpdate
     raise PreventUpdate
 
 #renaming modal
@@ -441,7 +445,7 @@ def check_if_esp_reachable(n_start, n_check, name):
             api.set_heartbeat_esp_false()
             return [True, 0, None]
     if n_check:
-        if (api.heartbeat_esp() and n_check >= 2) or n_check >= 10:
+        if (api.heartbeat_esp() and n_check >= 2) or n_check >= 5:
             return [False, 0, None]
     raise PreventUpdate
 
@@ -472,7 +476,7 @@ def show_esp_not_reachable_modal(n_measurement, n_calibrate, n_close):
     n_measurement += 1
     n_calibrate += 1
     
-    if n_measurement >= 10 or n_calibrate >= 10:
+    if n_measurement >= 5 or n_calibrate >= 5:
         return [True, 0]
     if n_close:
         return [False, 0]
@@ -539,20 +543,23 @@ def update_settings(n_change, n_close,  interval, tolerance_lat_acc, stable_amou
     if n_close:
         return return_list(modal_is_open = False)
     
-    if tools.get_user_data(tools.get_user())["role"] == "admin":
-        if any(invalids):
-            return return_list(False, *invalids)    
-        
-        if n_change and not any(invalids):
-            control_json = api.get_control()
-            control_json["interval"] = interval
-            control_json["tolerance_lat_acc"] = tolerance_lat_acc
-            control_json["stable_amount"] = stable_amount
-            control_json["data_package_size"] = data_package_size
-            control_json["standby_refresh"] = standby_refresh
-            api.update_control(control_json)
-            return return_list(modal_is_open = True)
-        
+    try:
+        if tools.get_user_data(tools.get_user())["role"] == "admin":
+            if any(invalids):
+                return return_list(False, *invalids)    
+            
+            if n_change and not any(invalids):
+                control_json = api.get_control()
+                control_json["interval"] = interval
+                control_json["tolerance_lat_acc"] = tolerance_lat_acc
+                control_json["stable_amount"] = stable_amount
+                control_json["data_package_size"] = data_package_size
+                control_json["standby_refresh"] = standby_refresh
+                api.update_control(control_json)
+                return return_list(modal_is_open = True)
+    except TypeError:
+        raise PreventUpdate
+            
     raise PreventUpdate
 
 #open/close calibrating modal
@@ -572,7 +579,7 @@ def check_measurement_name(n_calibrate, n_check):
         api.set_heartbeat_esp_false()
         return [True, 0, None]
     if n_check:
-        if (api.heartbeat_esp() and n_check >= 2) or n_check >= 10:
+        if (api.heartbeat_esp() and n_check >= 2) or n_check >= 5:
             return [False, 0, None]
     raise PreventUpdate
 

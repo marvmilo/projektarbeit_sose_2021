@@ -93,7 +93,7 @@ def measurement_running():
             ),
             dcc.Interval(
                 id = "measuring-interval",
-                interval = 5*1000,
+                interval = 2*1000,
                 n_intervals = 0
             ),
             html.Div(
@@ -222,7 +222,7 @@ def content():
                             html.Br(),
                             dcc.Interval(
                                 id = "heartbeat-esp-interval",
-                                interval = 1.5*1000
+                                interval = 2*1000
                             )
                         ]
                     )
@@ -428,7 +428,7 @@ def content():
                             html.Br(),
                             dcc.Interval(
                                 id = "calibrate-interval",
-                                interval = 1.5*1000
+                                interval = 2*1000
                             )
                         ]
                     )

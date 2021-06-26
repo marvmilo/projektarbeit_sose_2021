@@ -3,8 +3,8 @@ import requests
 import re
 
 #api values
-#api_url = "http://localhost:8000"
 api_url = "https://api-projektarbeit-sose-2021.herokuapp.com"
+api_url = "http://localhost:8000"
 headers = {
     'accept': 'application/json',
     'Authorization': 'Basic dXNlcjpwcm9qZWt0MTIz',

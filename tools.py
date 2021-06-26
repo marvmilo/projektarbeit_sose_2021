@@ -26,7 +26,10 @@ def get_user():
 #for getting user data
 def get_user_data(user = None):
     for i in range(10):
-        user_data = api.get_table("user_data")
+        try:
+            user_data = api.get_table("user_data")
+        except:
+            return None
         if user_data:
             break
     
