@@ -39,6 +39,7 @@ security = HTTPBasic()
 #format for control json
 class Control(BaseModel):
     measurement: bool
+    calibration: bool
     name: str
     table_name: str
     data_package_size: int
