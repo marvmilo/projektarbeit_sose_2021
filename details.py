@@ -12,12 +12,18 @@ import math
 import api
 import tools
 
+#set values
+accuracy = 2
+
 #for calculating weight
-def calculate_weight(voltage):
-    weight = 10.017/(1.543-0.555) * (voltage-0.555)
-    #weight = (voltage - 0.5525) * 87.37128802
-    return round(weight, 2)
-    return weight
+def calculate_weight(voltage, calibration):
+    if calibration:
+        weight = 10.017/(1.543-calibration) * (voltage-calibration)
+        #weight = (voltage - 0.5525) * 87.37128802
+        return round(weight, 2)
+        return weight
+    else:
+        return 0
 
 #for creating info card
 def info_card(header, value):
@@ -47,9 +53,22 @@ def info_card(header, value):
         style = {"height": "90%"}
     )
 
+#for rounding info cards
+def round_info(info):
+    try:
+        return round(info, accuracy)
+    except TypeError:
+        return "-"
+
 #content of measurements site
 def content(id):
     data = api.get_measurement(id)
+    
+    #calculate data
+    data["data"].sort(key = lambda d: d[0])
+    voltage_data = [round(d[-1], accuracy) for d in data["data"]]
+    weight_data = [round(calculate_weight(v, data["info"]["calibration_value"]), accuracy) for v in [d[-1] for d in data["data"]]]
+    
     
     #if no data return Error message
     if not data:
@@ -87,22 +106,44 @@ def content(id):
         )
     
     #building graph data
-    accuracy = 2
     time_data = []
     data["data"].sort(key = lambda d: d[0])
     for d in data["data"]:
         time_delta = tools.load_datetime(d[1]) - tools.load_datetime(data["data"][0][1])
         seconds = round(tools.timedelta_to_seconds(time_delta), accuracy)
         time_data.append(seconds)
+        
+    #calculate stable phases
+    i = 0
+    stable_phases = []
+    for u, d in enumerate(data["data"]):
+        if d[-2]:
+            i += 1
+        
+            #detect begin of stable phase
+            if i == 1:
+                begin = tools.load_datetime(d[1])
+            
+            #detect end of measurement
+            if i == data["info"]["stable_amount"]:
+                end = tools.load_datetime(data["data"][u][1])
+                stable_phases.append([begin,end])
+        else:
+            #detect end of stable phase
+            if i > 1:
+                end = tools.load_datetime(data["data"][u-1][1])
+                stable_phases.append([begin,end])
+                
+            i = 0
     
     #for calculating final weight
     def calculate_final_weight():
         stable_vals = [d[-1] for d in data["data"][-data["info"]["stable_amount"]:]]
         avg = sum(stable_vals) / len(stable_vals)
-        return float(calculate_weight(avg))
+        return float(calculate_weight(avg, data["info"]["calibration_value"]))
     
     #calculate final weight
-    if data["info"]["success"]:
+    if data["info"]["success"] and data["info"]["calibration_value"]:
         #create weight div
         weight_div = html.Div(
             dbc.Row(
@@ -178,10 +219,6 @@ def content(id):
         #colors
         voltage_color = "#004B9B"
         weight_color = "#007BFF"
-        #calculate data
-        data["data"].sort(key = lambda d: d[0])
-        voltage_data = [round(d[-1], accuracy) for d in data["data"]]
-        weight_data = [round(calculate_weight(v), accuracy) for v in voltage_data]
         
         #add weight data
         fig.add_trace(
@@ -208,7 +245,7 @@ def content(id):
         )
         
         #add line of final weight
-        if data["info"]["success"]:
+        if data["info"]["success"] and data["info"]["calibration_value"]:
             fig.add_trace(
                 go.Scatter(
                     x = time_data[-data["info"]["stable_amount"]:],
@@ -219,29 +256,6 @@ def content(id):
                 ),
                 secondary_y = False
             )
-        
-        #add stable phase
-        i = 0
-        stable_phases = []
-        for u, d in enumerate(data["data"]):
-            if d[-2]:
-                i += 1
-            
-                #detect begin of stable phase
-                if i == 1:
-                    begin = tools.load_datetime(d[1])
-                
-                #detect end of measurement
-                if i == data["info"]["stable_amount"]:
-                    end = tools.load_datetime(data["data"][u][1])
-                    stable_phases.append([begin,end])
-            else:
-                #detect end of stable phase
-                if i > 1:
-                    end = tools.load_datetime(data["data"][u-1][1])
-                    stable_phases.append([begin,end])
-                    
-                i = 0
         
         for phase in stable_phases:
             measurement_start = tools.load_datetime(data["data"][0][1])
@@ -278,95 +292,99 @@ def content(id):
         #return figure
         return fig
 
-    def build_acceleration(data):
-        #get data
-        accx = [d[2] for d in data["data"]]
-        accy = [d[3] for d in data["data"]]
-        accz = [d[4] for d in data["data"]]
-        
+    def build_hist(data):
         #create figure
-        fig = go.Figure()
-        
-        #add stable cicle
-        try:
-            phi = np.linspace(0, 2*math.pi, 100)
-            x = data["info"]["tolerance_latacc"] * np.cos(phi)
-            y = data["info"]["tolerance_latacc"] * np.sin(phi)
-            r = np.sqrt(x**2 + y**2)
-            J = np.where(y<0)
-            theta  = np.arctan2(y, x)
-            theta[J]= theta[J] + 2*math.pi
-            #add to figure
-            fig.add_trace(
-                go.Scatterpolar(
-                    r=r,
-                    theta=theta *180 / np.pi,
-                    mode='lines', 
-                    fill='toself', 
-                    name='<b>Stable</b> Area',
-                    opacity = 0.75,
-                    line = dict(
-                        color = "#004B9B"
-                    )
+        fig = go.Figure(
+            data = [
+                go.Histogram(
+                    x = voltage_data,
+                    histnorm = "percent",
+                    xbins = {"size": round((max(voltage_data) - min(voltage_data))/15, accuracy)},
+                    marker_color = "#007BFF"
                 )
-            )
-        except np.core._exceptions._UFuncNoLoopError:
-            pass
-        
-        #calculate polar cordinates
-        try:
-            range_i = range(len(accx))
-            r = [math.sqrt(accx[i]**2 + accy[i]**2) for i in range_i]
-            theta = [math.atan(accy[i] / accx[i]) for i in range_i]
-            
-            #create figure
-            fig.add_trace(
-                go.Scatterpolar(
-                    r = r,
-                    theta = theta,
-                    thetaunit = "radians",
-                    mode="markers",
-                    name = "<b>Acceleration</b> in m/s²",
-                    marker = dict(
-                        size=7.5, 
-                        color = "#007BFF"
-                    )
-                )
-            )
-        except ZeroDivisionError:
-            pass
-        
-        #update ticks
-        fig.update_polars(
-            angularaxis = dict(
-                tickmode = "array",
-                tickvals = [0, 90, 180, 270],
-                ticktext = ["postive<br><b>X-Acc</b>", "postive<br><b>Y-Acc</b>", "negative<br><b>X-Acc</b>", "negative<br><b>Y-Acc</b>"]
-            )
+            ]
         )
         
-        #update range
-        try:
-            if max(r) > data["info"]["tolerance_latacc"]:
-                radial_range = max(r)
-            else:
-                radial_range = data["info"]["tolerance_latacc"]
-            radial_range += radial_range/10
-        except:
-            radial_range = 0
-        
-        fig.update_polars(
-            radialaxis = dict(
-                range = [0, radial_range]
-            )
-        )
-        
-        #upoate title
+        #update layout
         fig.update_layout(
-            title = tools.graph_title("X/Y - ACCELERATION")
+            xaxis_title_text = "<b>Voltage</b> in V", # xaxis label
+            yaxis_title_text = "<b>Amount</b> in %", # yaxis label
+            bargap=0.2, # gap between bars of adjacent location coordinates
         )
+
+        #add figure title
+        fig.update_layout(
+            title = tools.graph_title("VOLTAGE HISTOGRAM")
+        )
+        
+        #update hovermode
+        fig.update_layout(hovermode="x unified")
         
         return fig
+    
+    #for building acceleration graphs
+    def build_acc(data, direction):
+        #import json
+        if direction == "x":
+            index = 2
+        elif direction == "y":
+            index = 3
+        elif direction == "z":
+            index = 4
+        else:
+            return None
+        
+        #filter data
+        x = time_data
+        y = [d[index] for d in data["data"]]
+        
+        #build graph
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=x, 
+                    y=y,
+                    line_shape = "spline",
+                    marker_color = "#007BFF"
+                )
+            ]
+        )
+        #add figure title
+        fig.update_layout(
+            title = tools.graph_title(f"{direction.upper()}-ACCELERATION")
+        )
+        
+        # Set x-axis title
+        fig.update_xaxes(title_text="<b>Runtime</b> in seconds")
+        
+        # Set y-axes titles
+        fig.update_yaxes(title_text=f"<b>Acceleration</b> in m/s²")
+        
+        #update hovermode
+        fig.update_layout(hovermode="x unified")
+        
+        #add stable phases
+        for phase in stable_phases:
+            measurement_start = tools.load_datetime(data["data"][0][1])
+            begin = tools.timedelta_to_seconds(phase[0] - measurement_start)
+            end = tools.timedelta_to_seconds(phase[1] - measurement_start)
+            
+            #add to fig
+            try:
+                fig.add_vrect(
+                    x0 = begin - data["info"]["interval"]/2,
+                    x1 = end +  data["info"]["interval"]/2,
+                    fillcolor = tools.accent_color[0],
+                    opacity = 0.15,
+                    line_width = 0
+                )
+            except TypeError:
+                pass
+        
+        #return graph
+        return dcc.Graph(
+            figure=fig
+        )
     
     #for building table
     def build_table(data):
@@ -413,7 +431,7 @@ def content(id):
                         cell(row[0]),
                         cell(round(second, 2)),
                         cell(round(row[-1], 2)),
-                        cell(round(calculate_weight(row[-1]), 2)),
+                        cell(round(calculate_weight(row[-1], data["info"]["calibration_value"]), 2)),
                         cell(round(row[2], 2)),
                         cell(round(row[3], 2)),
                         cell(round(row[4], 2)),
@@ -449,7 +467,7 @@ def content(id):
                 "height": "500px"
             }
         )
-    
+
     #content div
     return html.Div(
         children = [
@@ -518,6 +536,9 @@ def content(id):
                     ),
                     dbc.Col(
                         info_card("DURATION", tools.pp_duration(data["info"]["duration"]))
+                    ),
+                    dbc.Col(
+                        info_card("CALIBRATION", f"{round_info(data['info']['calibration_value'])} V")
                     )
                 ],
                 style = {"marginBottom": 8}
@@ -556,19 +577,30 @@ def content(id):
             dbc.Row(
                 children = [
                     dbc.Col(
-                        "x-acceleration",
-                        width = "auto"
+                        build_acc(data, "x"),
+                        style = {
+                            "width": "33%",
+                            "min-width": "350px"
+                        }
                     ),
                     dbc.Col(
-                        "y-acceleration",
-                        width = "auto"
+                        build_acc(data, "y"),
+                        style = {
+                            "width": "33%",
+                            "min-width": "350px"
+                        }
                     ),
                     dbc.Col(
-                        "z-acceleration",
-                        width = "auto"
-                    )
+                        build_acc(data, "z"),
+                        style = {
+                            "width": "33%",
+                            "min-width": "350px"
+                        }
+                    ),
                 ],
-                justify = "center"
+                justify = "center",
+                no_gutters = True,
+                style = {"width": "100%"}
             ),
             
             #acceleration and edit row
@@ -576,7 +608,7 @@ def content(id):
                 children = [
                     dbc.Col(
                         children = [
-                            dcc.Graph(figure = build_acceleration(data)),
+                            dcc.Graph(figure = build_hist(data)),
                             html.Div(style = {"width": "350px"})
                         ]
                     ),

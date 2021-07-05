@@ -96,7 +96,7 @@ def get_measurements():
         return int(text) if text.isdigit() else text
     def natural_keys(text):
         return [ atoi(c) for c in re.split(r'(\d+)', text)]
-    callback.sort(key = natural_keys)
+    callback.sort(key = natural_keys, reverse = True)
     
     return callback
 
