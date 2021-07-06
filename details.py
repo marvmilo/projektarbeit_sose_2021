@@ -14,14 +14,15 @@ import tools
 
 #set values
 accuracy = 2
+m_mbe = 9.975
+m_mba = 4.95
+U_mbe = 1.36
 
 #for calculating weight
 def calculate_weight(voltage, calibration):
     if calibration:
-        weight = 10.017/(1.543-calibration) * (voltage-calibration)
-        #weight = (voltage - 0.5525) * 87.37128802
+        weight = (m_mbe-m_mba)/(U_mbe-calibration) * (voltage-calibration) + m_mba
         return round(weight, 2)
-        return weight
     else:
         return 0
 
@@ -140,6 +141,7 @@ def content(id):
     def calculate_final_weight():
         stable_vals = [d[-1] for d in data["data"][-data["info"]["stable_amount"]:]]
         avg = sum(stable_vals) / len(stable_vals)
+        print(avg)
         return float(calculate_weight(avg, data["info"]["calibration_value"]))
     
     #calculate final weight
