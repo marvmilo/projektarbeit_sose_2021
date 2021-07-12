@@ -13,7 +13,7 @@ import api
 import tools
 
 #set values
-accuracy = 2
+accuracy = 1
 m_mbe = 9.975
 m_mba = 4.95
 U_mbe = 1.36
