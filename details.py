@@ -22,7 +22,7 @@ U_mbe = 1.36
 def calculate_weight(voltage, calibration):
     if calibration:
         weight = (m_mbe-m_mba)/(U_mbe-calibration) * (voltage-calibration) + m_mba
-        return round(weight, 2)
+        return round(weight, accuracy)
     else:
         return 0
 
