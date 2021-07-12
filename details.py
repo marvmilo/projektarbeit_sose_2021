@@ -20,10 +20,10 @@ U_mbe = 1.36
 
 #for calculating weight
 def calculate_weight(voltage, calibration):
-    try:
+    if calibration:
         weight = (m_mbe-m_mba)/(U_mbe-calibration) * (voltage-calibration) + m_mba
         return round(weight, 2)
-    except TypeError:
+    else:
         return 0
 
 #for creating info card
